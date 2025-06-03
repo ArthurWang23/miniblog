@@ -1,0 +1,12 @@
+# air在运行时存储临时文件的目录
+tmp_dir = "/tmp/air"
+ 
+[build]
+# cmd 指定了监听文件有变化时，air 需要执行的命令。
+# 这里指定了执行 make build 重新构建 mb-apiserver 二进制文件
+cmd = "make build" 
+# bin 指定了执行完 cmd 命令后，执行的二进制文件。
+# 这里指定了执行 _output/ mb-apiserver 文件
+bin = "_output/mb-apiserver"
+# args_bin 指定了运行二进制文件（bin/full_bin）时添加额外参数，这里设置为空
+args_bin = []
