@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/ArthurWang23/miniblog/cmd/mb-apiserver/app/options"
+	"github.com/ArthurWang23/miniblog/pkg/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -51,10 +52,13 @@ The project features include:
 	// 持久性标志 可用于它所分配的命令以及命令下的每个子命令
 	cmd.PersistentFlags().StringVarP(&configFile, "config", "c", filePath(), "Path to the miniblog configuration file.")
 	opts.AddFlags(cmd.PersistentFlags())
+
+	version.AddFlags(cmd.PersistentFlags())
 	return cmd
 }
 
 func run(opts *options.ServerOptions) error {
+	version.PrintAndExitIfRequested()
 	if err := viper.Unmarshal(opts); err != nil {
 		return err
 	}
