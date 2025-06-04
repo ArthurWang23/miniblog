@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ArthurWang23/miniblog/internal/pkg/log"
 	"github.com/spf13/viper"
 )
 
@@ -27,8 +28,8 @@ func (cfg *Config) NewUnionServer() (*UnionServer, error) {
 }
 
 func (s *UnionServer) Run() error {
-	fmt.Printf("ServerMode from ServerOptions: %s\n", s.cfg.ServerMode)
-	fmt.Printf("ServerMode from Viper: %s\n\n", viper.GetString("server-mode"))
+	log.Infow("ServerMode from ServerOptions", "jwt-key", s.cfg.JWTKey)
+	log.Infow("ServerMode from Viper", "jwt-key", viper.GetString("jwt-key"))
 	jsonData, _ := json.MarshalIndent(s.cfg, "", " ")
 	fmt.Println(string(jsonData))
 	select {}

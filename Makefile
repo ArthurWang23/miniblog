@@ -8,7 +8,7 @@ PROJ_ROOT_DIR := $(abspath $(shell cd $(COMMON_SELF_DIR)/ && pwd -P))
 OUTPUT_DIR := $(PROJ_ROOT_DIR)/_output
  
 # ==============================================================================
-# 定义版本相关变量
+# 定义版本相关变量 编译时自动注入版本信息
 
 
 ## 指定应用使用的version包，通过'-ldflags -X'向包中指定的变量注入值
