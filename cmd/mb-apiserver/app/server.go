@@ -1,9 +1,6 @@
 package app
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"github.com/ArthurWang23/miniblog/cmd/mb-apiserver/app/options"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,19 +41,7 @@ The project features include:
 		SilenceUsage: true,
 		// 指定调用cmd.Execute()时，执行的Run函数
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Unmarshal方法可以将viper加载的配置项解析到opt中
-			if err := viper.Unmarshal(opts); err != nil {
-				return err
-			}
-			if err := opts.Validate(); err != nil {
-				return err
-			}
-			fmt.Printf("JWTKey from ServerOptions : %s\n", opts.JWTKey)
-			fmt.Printf("JWTKey from Viper : %s\n\n", viper.GetString("jwt-key"))
-			// 无前缀 空格分隔
-			jsonData, _ := json.MarshalIndent(opts, "", " ")
-			fmt.Println(string(jsonData))
-			return nil
+			return run(opts)
 		},
 		Args: cobra.NoArgs,
 	}
@@ -67,4 +52,25 @@ The project features include:
 	cmd.PersistentFlags().StringVarP(&configFile, "config", "c", filePath(), "Path to the miniblog configuration file.")
 	opts.AddFlags(cmd.PersistentFlags())
 	return cmd
+}
+
+func run(opts *options.ServerOptions) error {
+	if err := viper.Unmarshal(opts); err != nil {
+		return err
+	}
+
+	if err := opts.Validate(); err != nil {
+		return err
+	}
+	// 获取应用配置
+	// 将命令行选项和应用配置分开，可以更加灵活地处理2中不同类型配置
+	cfg, err := opts.Config()
+	if err != nil {
+		return err
+	}
+	server, err := cfg.NewUnionServer()
+	if err != nil {
+		return err
+	}
+	return server.Run()
 }
