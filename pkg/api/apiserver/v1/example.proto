@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1;v1";
+
+enum UserStatus{
+    Active = 0;
+
+    Inactive = 1;
+
+    Banned = 2;
+}
+
+
+message ModifierExample{
+    reserved 2,15 to 25;// 保留标识符 可以避免其他人在未来使用不该使用的标志号
+
+    string username = 1;
+    // 可选
+    optional string nickname = 3;
+
+    bool has_email = 4;
+    // repeated 表示任意数量（可以是0）的手机号，看作数组
+    repeated string phones = 5;
+    // 字节数组
+    bytes context =6;
+
+    int32 money = 7;
+
+    int64 count = 8;
+
+    map<string,int64> address =9;
+    // 创建时间
+    google.protobuf.Timestamp created_at = 10;
+
+    UserStatus status = 11;
+}

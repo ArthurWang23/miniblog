@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/ArthurWang23/miniblog/cmd/mb-apiserver/app/options"
+	"github.com/ArthurWang23/miniblog/internal/pkg/log"
 	"github.com/ArthurWang23/miniblog/pkg/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -59,6 +60,8 @@ The project features include:
 
 func run(opts *options.ServerOptions) error {
 	version.PrintAndExitIfRequested()
+	log.Init(logOptions())
+	defer log.Sync()
 	if err := viper.Unmarshal(opts); err != nil {
 		return err
 	}
@@ -77,4 +80,30 @@ func run(opts *options.ServerOptions) error {
 		return err
 	}
 	return server.Run()
+}
+
+func logOptions() *log.Options {
+	opts := log.NewOptions()
+
+	if viper.IsSet("log.disable-caller") {
+		opts.DisableCaller = viper.GetBool("log.disable-caller")
+	}
+
+	if viper.IsSet("log.disable-stacktrace") {
+		opts.DisableStacktrace = viper.GetBool("log.disable-stacktrace")
+	}
+
+	if viper.IsSet("log.level") {
+		opts.Level = viper.GetString("log.level")
+	}
+
+	if viper.IsSet("log.format") {
+		opts.Format = viper.GetString("log.format")
+	}
+
+	if viper.IsSet("log.output-paths") {
+		opts.OutputPaths = viper.GetStringSlice("log.output-paths")
+	}
+
+	return opts
 }

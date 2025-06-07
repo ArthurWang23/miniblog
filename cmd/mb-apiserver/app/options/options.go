@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"time"
 
+	genericoptions "github.com/onexstack/onexstack/pkg/options"
+	stringsutil "github.com/onexstack/onexstack/pkg/util/strings"
 	"github.com/spf13/pflag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -20,10 +22,11 @@ import (
 )
 
 // 定义支持的服务器模式集合
+// 添加grpc服务配置
 var availableServerModes = sets.New(
-	"grpc",
-	"grpc-gateway",
-	"gin",
+	apiserver.GinServerMode,
+	apiserver.GRPCServerMode,
+	apiserver.GRPCGatewayServerMode,
 )
 
 // mapstructure 标签用于将配置文件中的配置项与go结构体字段进行映射  在调用viper.Unmarshal时会将配置项的值赋值给对应的结构体字段
@@ -34,15 +37,21 @@ type ServerOptions struct {
 	JWTKey string `json:"jwt-key" mapstructure:"jwt-key"`
 	// Expiration定义JWT Token过期时间
 	Expiration time.Duration `json:"expiration" mapstructure:"expiration"`
+
+	// GRPCOptions包含grpc配置选项
+	GRPCOptions *genericoptions.GRPCOptions `json:"grpc" mapstructure:"grpc"`
 }
 
 // 创建ServerOptions的默认配置
 func NewServerOptions() *ServerOptions {
-	return &ServerOptions{
-		ServerMode: "grpc-gateway",
-		JWTKey:     "Rtg8BPKNEf2mB4mgvKONGPZZQSaJWNLijxR42qRgq0iBb5",
-		Expiration: 2 * time.Hour,
+	opts := &ServerOptions{
+		ServerMode:  apiserver.GRPCGatewayServerMode,
+		JWTKey:      "Rtg8BPKNEf2mB4mgvKONGPZZQSaJWNLijxR42qRgq0iBb5",
+		Expiration:  2 * time.Hour,
+		GRPCOptions: genericoptions.NewGRPCOptions(),
 	}
+	opts.GRPCOptions.Addr = ":6666"
+	return opts
 }
 
 // 通过pflag从命令行解析选项   AddFlags将ServerOptions选项绑定到命令行
@@ -50,6 +59,7 @@ func (o *ServerOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.ServerMode, "server-mode", o.ServerMode, fmt.Sprintf("Server mode,available options: %v", availableServerModes.UnsortedList()))
 	fs.StringVar(&o.JWTKey, "jwt-key", o.JWTKey, "JWT signing key. Must be at least 6 characters long.")
 	fs.DurationVar(&o.Expiration, "expiration", o.Expiration, "The expiration duration of JWT tokens.")
+	o.GRPCOptions.AddFlags(fs)
 }
 
 // Validate校验ServerOptions中的选项是否合法
@@ -62,6 +72,10 @@ func (o *ServerOptions) Validate() error {
 	if len(o.JWTKey) < 6 {
 		errs = append(errs, errors.New("JWT key must be at least 6 characters long"))
 	}
+
+	if stringsutil.StringIn(o.ServerMode, []string{apiserver.GRPCServerMode, apiserver.GRPCGatewayServerMode}) {
+		errs = append(errs, o.GRPCOptions.Validate()...)
+	}
 	// 聚合为一个错误 用的k8s生态中的一个包
 	return utilerrors.NewAggregate(errs)
 }
@@ -70,8 +84,9 @@ func (o *ServerOptions) Validate() error {
 // 注意：导入了运行时代码包，控制面依赖数据面，要避免反向导入循环依赖
 func (o *ServerOptions) Config() (*apiserver.Config, error) {
 	return &apiserver.Config{
-		ServerMode: o.ServerMode,
-		JWTKey:     o.JWTKey,
-		Expiration: o.Expiration,
+		ServerMode:  o.ServerMode,
+		JWTKey:      o.JWTKey,
+		Expiration:  o.Expiration,
+		GRPCOptions: o.GRPCOptions,
 	}, nil
 }

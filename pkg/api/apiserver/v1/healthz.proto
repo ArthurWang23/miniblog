@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1";
+
+// ServiceStatus 表示服务的健康状态
+enum ServiceStatue {
+    Healthy = 0;
+    Unhealthy = 1;
+}
+// 响应结构体
+message HealthzResponse {
+    ServiceStatue status = 1;
+    // 表示请求时间戳
+    string timestamp = 2;
+    // 可选的状态消息
+    string message = 3;
+}   
