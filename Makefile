@@ -69,10 +69,18 @@ clean: # 清理构建产物、临时文件等.
 .PHONY: protoc
 protoc: # 编译protobuf文件
 	@echo "===========> Generate protobuf files"
+	@mkdir -p $(PROJ_ROOT_DIR)/api/openapi
+	@# --grpc-gateway_out用来在pkg/api/apiserver/v1目录下胜澈功能反向服务器代码apiserver.pb.gw.go
+	@# --openapiv2_out用来在api/openapi/apiserver/v1目录下生成Swagger V2接口文档
+	@# restfulapi中delete通常用于删除资源，按规范只应携带资源标识符，不建议附带请求体
+	@# 然而某些场景（删除选项或多个待删除的资源列表）可设置allow_delete_body=true放宽delete请求限制
 	@protoc                                              \
 		--proto_path=$(APIROOT)                          \
 		--proto_path=$(PROJ_ROOT_DIR)/third_party/protobuf    \
 		--go_out=paths=source_relative:$(APIROOT)        \
 		--go-grpc_out=paths=source_relative:$(APIROOT)   \
+		--grpc-gateway_out=allow_delete_body=true,paths=source_relative:$(APIROOT) \
+		--openapiv2_out=$(PROJ_ROOT_DIR)/api/openapi     \
+		--openapiv2_opt=allow_delete_body=true,logtostderr=true \
 		$(shell find $(APIROOT) -name *.proto)
 

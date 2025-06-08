@@ -4,10 +4,54 @@ package v1;
 
 import "google/protobuf/empty.proto";// 导入空消息
 import "apiserver/v1/healthz.proto";// 健康检查消息定义
+import "google/api/annotations.proto";// 定义HTTP映射规则  通过option(google.api.http)实现grpc到http的映射
+import "protoc-gen-openapiv2/options/annotations.proto";// 为生成OpenAPI文档提供相关注释
 
+// 定义MiniBlog服务
+// 添加HTTP映射规则，实现反向代理
+// 指定协议缓冲区文件生成的go代码所在的包路径
 option go_package = "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1;v1";
+
+// openAPI 生成文档
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+    info :{
+        title : "miniblog API";
+
+        version : "1.0";
+
+        description : "";
+
+        // 开发者联系方式、项目名称、网址、email
+        contact : {
+            name : "miniblog";
+            url : "https://github.com/ArthurWang23/miniblog";
+            email : "arthur2826979176@gmail.com";
+        };
+        license : {
+            name : "MIT License";
+            url : "https://github.com/ArthurWang23/miniblog/blob/main/LICENSE";
+        };
+    };
+    schemes : HTTPS;
+    consumes : "application/json";
+    produces : "application/json";
+};
+
 
 service MiniBlog {
     // 健康检查
-    rpc Healthz(google.protobuf.Empty) returns (HealthzResponse){}
+    rpc Healthz(google.protobuf.Empty) returns (HealthzResponse){
+        // 通过google.api.http 注释，指定http方法为get url路径为/healthz
+        option (google.api.http) = {
+            get: "/healthz",
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            // 指定操作的摘要
+            summary : "服务健康检查";
+            // 指定操作的ID
+            operation_id : "Healthz";
+            // 指定操作的标签
+            tags : "服务治理";
+        };
+    } 
 }

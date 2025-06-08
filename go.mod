@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/go-kratos/kratos/v2 v2.8.4
 	github.com/gosuri/uitable v0.0.4
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.0
 	github.com/onexstack/onexstack v0.0.2
 	github.com/prometheus/common v0.64.0
 	github.com/spf13/cobra v1.9.1
@@ -12,6 +13,7 @@ require (
 	github.com/spf13/viper v1.20.1
 	go.uber.org/automaxprocs v1.6.0
 	go.uber.org/zap v1.27.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20250115164207-1a7da9e5054f
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f
 	google.golang.org/grpc v1.69.4
 	google.golang.org/protobuf v1.36.6
@@ -40,7 +42,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/google/wire v0.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -94,7 +95,6 @@ require (
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250115164207-1a7da9e5054f // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect

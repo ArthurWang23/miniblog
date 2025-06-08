@@ -40,6 +40,8 @@ type ServerOptions struct {
 
 	// GRPCOptions包含grpc配置选项
 	GRPCOptions *genericoptions.GRPCOptions `json:"grpc" mapstructure:"grpc"`
+
+	HTTPOptions *genericoptions.HTTPOptions `json:"http" mapstructure:"http"`
 }
 
 // 创建ServerOptions的默认配置
@@ -49,8 +51,10 @@ func NewServerOptions() *ServerOptions {
 		JWTKey:      "Rtg8BPKNEf2mB4mgvKONGPZZQSaJWNLijxR42qRgq0iBb5",
 		Expiration:  2 * time.Hour,
 		GRPCOptions: genericoptions.NewGRPCOptions(),
+		HTTPOptions: genericoptions.NewHTTPOptions(),
 	}
 	opts.GRPCOptions.Addr = ":6666"
+	opts.HTTPOptions.Addr = ":5555"
 	return opts
 }
 
@@ -60,6 +64,7 @@ func (o *ServerOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.JWTKey, "jwt-key", o.JWTKey, "JWT signing key. Must be at least 6 characters long.")
 	fs.DurationVar(&o.Expiration, "expiration", o.Expiration, "The expiration duration of JWT tokens.")
 	o.GRPCOptions.AddFlags(fs)
+	o.HTTPOptions.AddFlags(fs)
 }
 
 // Validate校验ServerOptions中的选项是否合法
@@ -88,5 +93,6 @@ func (o *ServerOptions) Config() (*apiserver.Config, error) {
 		JWTKey:      o.JWTKey,
 		Expiration:  o.Expiration,
 		GRPCOptions: o.GRPCOptions,
+		HTTPOptions: o.HTTPOptions,
 	}, nil
 }

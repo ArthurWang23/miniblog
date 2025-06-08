@@ -1,0 +1,111 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "miniblog API",
+    "version": "1.0",
+    "contact": {
+      "name": "miniblog",
+      "url": "https://github.com/ArthurWang23/miniblog",
+      "email": "arthur2826979176@gmail.com"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://github.com/ArthurWang23/miniblog/blob/main/LICENSE"
+    }
+  },
+  "tags": [
+    {
+      "name": "MiniBlog"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "summary": "服务健康检查",
+        "operationId": "Healthz",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HealthzResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "服务治理"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1HealthzResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1ServiceStatue"
+        },
+        "timestamp": {
+          "type": "string",
+          "title": "表示请求时间戳"
+        },
+        "message": {
+          "type": "string",
+          "title": "可选的状态消息"
+        }
+      },
+      "title": "响应结构体"
+    },
+    "v1ServiceStatue": {
+      "type": "string",
+      "enum": [
+        "Healthy",
+        "Unhealthy"
+      ],
+      "default": "Healthy",
+      "title": "ServiceStatus 表示服务的健康状态"
+    }
+  }
+}
