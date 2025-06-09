@@ -5,6 +5,10 @@ package apiserver
 // 采用面向对象风格UnionServer结构体封装服务相关功能
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
@@ -66,7 +70,30 @@ func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
 	return &ServerConfig{cfg: cfg}, nil
 }
 
+// 启动服务并优雅关闭
 func (s *UnionServer) Run() error {
-	s.srv.RunOrDie()
+	go s.srv.RunOrDie()
+
+	// 执行kill时默认发送SIGTERM
+	// 使用kill -2 发送SIGINT（如Ctrl+C）
+	// 使用kill -9 发送SIGKILL，但该信号无法被捕获，因此无需监听和处理
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	// 阻塞 等待从quit channel接收到信号
+	<-quit
+
+	log.Infow("Shutting down sever ...")
+
+	// 优雅关闭服务
+	// 创建上下文对象ctx，为优雅关闭服务提供超时控制
+	// 确保服务在一定时间内完成清理工作
+	// 若超时指定时间，服务将强制终止
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// 先关闭依赖的服务，再关闭被依赖的服务
+	s.srv.GracefulStop(ctx)
+
+	log.Infow("Server exited")
 	return nil
 }

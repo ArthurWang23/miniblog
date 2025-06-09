@@ -31,6 +31,9 @@ func (s *HTTPServer) RunOrDie() {
 
 func (s *HTTPServer) GracefulStop(ctx context.Context) {
 	log.Infow("Gracefully stop HTTP(s) server")
+	// Shutdown 方法首先关闭所有已开启的监听器，然后关闭所有空闲连接
+	// 最后等待所有活跃连接进入空闲状态后终止服务
+	// 若传入ctx在服务完成终止之前超时，则Shutdown会返回与context相关的错误
 	if err := s.srv.Shutdown(ctx); err != nil {
 		log.Errorw("HTTP(s) server forced to shutdown", "err", err)
 	}
