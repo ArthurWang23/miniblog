@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	handler "github.com/ArthurWang23/miniblog/internal/apiserver/handler/http"
+	mw "github.com/ArthurWang23/miniblog/internal/pkg/middleware/gin"
 	"github.com/ArthurWang23/miniblog/internal/pkg/server"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
@@ -24,6 +25,8 @@ var _ server.Server = (*ginServer)(nil)
 
 func (c *ServerConfig) NewGinServer() server.Server {
 	engin := gin.New()
+	// 先注册中间件，再注册路由
+	engin.Use(gin.Recovery(), mw.NoCache, mw.Cors, mw.Secure, mw.RequestIDMiddleware())
 	// 注册rest api 路由
 	c.InstallRESTAPI(engin)
 	httpsrv := server.NewHTTPServer(c.cfg.HTTPOptions, engin)
