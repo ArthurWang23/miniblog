@@ -1,9 +1,16 @@
+// Copyright 2025 ArthurWang &lt;2826979176@qq.com>. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file. The original repo for
+// this file is https://github.com/arthurwang23/miniblog. The professional
+// version of this repository is https://github.com/arthurwang23/miniblog.
+
 package apiserver
 
 import (
 	"context"
 
 	handler "github.com/ArthurWang23/miniblog/internal/apiserver/handler/grpc"
+	mw "github.com/ArthurWang23/miniblog/internal/pkg/middleware/grpc"
 	"github.com/ArthurWang23/miniblog/internal/pkg/server"
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -21,10 +28,18 @@ var _ server.Server = (*grpcServer)(nil)
 // 创建并初始化grpc或grpc和grpc-gateway服务器
 // NewGRPCServerOr中Or一般表示或者
 // 暗示函数会有两种或多种选择中选择一种可能性
-
+// 添加拦截器到grpc请求链中
 func (c *ServerConfig) NewGRPCServerOr() (server.Server, error) {
+	// 配置拦截器链
+	serverOptions := []grpc.ServerOption{
+		grpc.ChainUnaryInterceptor(
+			mw.RequestIDInterceptor(),
+		),
+	}
+
 	grpcsrv, err := server.NewGRPCServer(
 		c.cfg.GRPCOptions,
+		serverOptions,
 		func(s grpc.ServiceRegistrar) {
 			apiv1.RegisterMiniBlogServer(s, handler.NewHandler())
 		},

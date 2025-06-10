@@ -4,18 +4,14 @@
 // this file is https://github.com/arthurwang23/miniblog. The professional
 // version of this repository is https://github.com/arthurwang23/miniblog.
 
-package http
+package known
 
-import (
-	"time"
+// 将一些共享常量统一保存在常量包 如known constant这类包中，以便集中管理和引用
 
-	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
-	"github.com/gin-gonic/gin"
+const (
+	// XRequestID 用来定义上下文中的键，代表请求ID
+	XRequestID = "x-request-id"
+
+	// XUserID 用来定义上下文的键，代表请求用户ID UserID整个用户生命周期唯一
+	XUserID = "x-user-id"
 )
-
-func (h *Handler) Healthz(c *gin.Context) {
-	c.JSON(200, &apiv1.HealthzResponse{
-		Status:    apiv1.ServiceStatue_Healthy,
-		Timestamp: time.Now().Format(time.DateTime),
-	})
-}

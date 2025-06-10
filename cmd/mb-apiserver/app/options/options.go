@@ -1,3 +1,9 @@
+// Copyright 2025 ArthurWang &lt;2826979176@qq.com>. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file. The original repo for
+// this file is https://github.com/arthurwang23/miniblog. The professional
+// version of this repository is https://github.com/arthurwang23/miniblog.
+
 // 通过ServerOptions结构体定义需要的配置项
 // 三种配置方式：默认配置、命令行选项设置配置、通过配置文件设置
 // 首先创建一个默认的配置，之后分别通过命令行选项和配置文件2种方式

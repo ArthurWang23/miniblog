@@ -1,3 +1,9 @@
+// Copyright 2025 ArthurWang &lt;2826979176@qq.com>. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file. The original repo for
+// this file is https://github.com/arthurwang23/miniblog. The professional
+// version of this repository is https://github.com/arthurwang23/miniblog.
+
 package server
 
 import (
@@ -19,6 +25,7 @@ type GRPCServer struct {
 
 func NewGRPCServer(
 	grpcOptions *genericoptions.GRPCOptions,
+	serverOptions []grpc.ServerOption,
 	registerServer func(grpc.ServiceRegistrar),
 ) (*GRPCServer, error) {
 	lis, err := net.Listen("tcp", grpcOptions.Addr)
@@ -26,8 +33,9 @@ func NewGRPCServer(
 		log.Errorw("Failed to listen", "err", err)
 		return nil, err
 	}
-	grpcsrv := grpc.NewServer()
+	grpcsrv := grpc.NewServer(serverOptions...)
 	registerServer(grpcsrv)
+	registerHealthServer(grpcsrv)
 	reflection.Register(grpcsrv)
 	return &GRPCServer{
 		srv: grpcsrv,

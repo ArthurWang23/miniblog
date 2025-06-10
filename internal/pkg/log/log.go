@@ -1,3 +1,9 @@
+// Copyright 2025 ArthurWang &lt;2826979176@qq.com>. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file. The original repo for
+// this file is https://github.com/arthurwang23/miniblog. The professional
+// version of this repository is https://github.com/arthurwang23/miniblog.
+
 package log
 
 // 设计日志包
@@ -11,9 +17,12 @@ package log
 // 但日志包是项目内公共使用的，所以放在internal/pkg
 
 import (
+	"context"
 	"sync"
 	"time"
 
+	"github.com/ArthurWang23/miniblog/internal/pkg/contextx"
+	"github.com/ArthurWang23/miniblog/internal/pkg/known"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -159,4 +168,29 @@ func Fatalw(msg string, kvs ...any) {
 
 func (l *zapLogger) Fatalw(msg string, kvs ...any) {
 	l.z.Sugar().Fatalw(msg, kvs...)
+}
+
+func W(ctx context.Context) Logger {
+	return std.W(ctx)
+}
+
+func (l *zapLogger) W(ctx context.Context) Logger {
+	lc := l.clone()
+	// 定义一个映射，关联context提取函数和日志字段名
+	contextExtractors := map[string]func(context.Context) string{
+		known.XRequestID: contextx.RequestID,
+		known.XUserID:    contextx.UserID,
+	}
+	// 遍历映射，从context中提取值并添加到日志中
+	for fieldName, extractor := range contextExtractors {
+		if val := extractor(ctx); val != "" {
+			lc.z = lc.z.With(zap.String(fieldName, val))
+		}
+	}
+	return lc
+}
+
+func (l *zapLogger) clone() *zapLogger {
+	newLogger := *l
+	return &newLogger
 }
