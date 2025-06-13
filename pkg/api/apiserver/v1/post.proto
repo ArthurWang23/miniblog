@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1;v1";
+
+message Post {
+    string postID = 1;
+    string userID = 2;
+    string title = 3;
+    string content = 4;
+    google.protobuf.Timestamp createdAt = 5;
+    google.protobuf.Timestamp updatedAt = 6;
+}
+
+message CreatePostRequest {
+    string title = 1;
+    string content = 2;
+}
+
+message CreatePostResponse {
+    string postID = 1;
+}
+
+message UpdatePostRequest {
+    string postID = 1;
+    optional string title = 2;
+    optional string content = 3;
+}
+
+message UpdatePostResponse {
+}
+
+message DeletePostRequest {
+    repeated string postIDs = 1;
+}
+
+message DeletePostResponse {
+}
+
+message GetPostRequest {
+    // @gotags: uri:"postID"
+    string postID = 1;
+}
+
+message GetPostResponse {
+    Post post = 1;
+}
+
+message ListPostRequest {
+    // @gotags: form:"offset"
+    int64 offset = 1;
+    // @gotags: form:"limit"
+    int64 limit = 2;
+    optional string title = 3;
+}
+
+message ListPostResponse {
+    int64 total_count = 1;
+    repeated Post posts = 2;
+}

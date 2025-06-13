@@ -17,9 +17,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ArthurWang23/miniblog/internal/apiserver/biz"
+	"github.com/ArthurWang23/miniblog/internal/apiserver/store"
+	"github.com/ArthurWang23/miniblog/internal/pkg/contextx"
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
 	"github.com/ArthurWang23/miniblog/internal/pkg/server"
-	genericclioptions "github.com/onexstack/onexstack/pkg/options"
+	"github.com/ArthurWang23/miniblog/pkg/store/where"
+	genericoptions "github.com/onexstack/onexstack/pkg/options"
+	"gorm.io/gorm"
 )
 
 const (
@@ -35,11 +40,12 @@ const (
 )
 
 type Config struct {
-	ServerMode  string
-	JWTKey      string
-	Expiration  time.Duration
-	GRPCOptions *genericclioptions.GRPCOptions
-	HTTPOptions *genericclioptions.HTTPOptions
+	ServerMode   string
+	JWTKey       string
+	Expiration   time.Duration
+	GRPCOptions  *genericoptions.GRPCOptions
+	HTTPOptions  *genericoptions.HTTPOptions
+	MySQLOptions *genericoptions.MySQLOptions
 }
 
 // 根据ServerMode决定要启动的服务器类型
@@ -49,9 +55,14 @@ type UnionServer struct {
 
 type ServerConfig struct {
 	cfg *Config
+	biz biz.IBiz
 }
 
 func (cfg *Config) NewUnionServer() (*UnionServer, error) {
+	// 注册租户解析函数，通过上下文获取用户id
+	where.RegisterTenant("userID", func(ctx context.Context) string {
+		return contextx.UserID(ctx)
+	})
 	serverConfig, err := cfg.NewServerConfig()
 	if err != nil {
 		return nil, err
@@ -70,10 +81,6 @@ func (cfg *Config) NewUnionServer() (*UnionServer, error) {
 		return nil, err
 	}
 	return &UnionServer{srv: srv}, nil
-}
-
-func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
-	return &ServerConfig{cfg: cfg}, nil
 }
 
 // 启动服务并优雅关闭
@@ -102,4 +109,20 @@ func (s *UnionServer) Run() error {
 
 	log.Infow("Server exited")
 	return nil
+}
+
+func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
+	db, err := cfg.NewDB()
+	if err != nil {
+		return nil, err
+	}
+	store := store.NewStore(db)
+	return &ServerConfig{
+		cfg: cfg,
+		biz: biz.NewBiz(store),
+	}, nil
+}
+
+func (cfg *Config) NewDB() (*gorm.DB, error) {
+	return cfg.MySQLOptions.NewDB()
 }

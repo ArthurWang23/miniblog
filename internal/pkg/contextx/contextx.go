@@ -12,6 +12,9 @@ type (
 	// userIDKey 定义用户ID的上下文键
 	userIDKey struct{}
 
+	usernameKey struct{}
+
+	accessTokenKey struct{}
 	// requestIDKey 定义请求ID的上下文键
 	requestIDKey struct{}
 )
@@ -34,4 +37,22 @@ func WithRequestID(ctx context.Context, requestID string) context.Context {
 func RequestID(ctx context.Context) string {
 	requestID, _ := ctx.Value(requestIDKey{}).(string)
 	return requestID
+}
+
+func WithUsername(ctx context.Context, username string) context.Context {
+	return context.WithValue(ctx, usernameKey{}, username)
+}
+
+func Username(ctx context.Context) string {
+	username, _ := ctx.Value(usernameKey{}).(string)
+	return username
+}
+
+func WithAccessToken(ctx context.Context, accessToken string) context.Context {
+	return context.WithValue(ctx, accessTokenKey{}, accessToken)
+}
+
+func AccessToken(ctx context.Context) string {
+	accessToken, _ := ctx.Value(accessTokenKey{}).(string)
+	return accessToken
 }

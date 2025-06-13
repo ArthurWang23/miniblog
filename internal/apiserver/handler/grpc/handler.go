@@ -4,9 +4,10 @@
 // this file is https://github.com/arthurwang23/miniblog. The professional
 // version of this repository is https://github.com/arthurwang23/miniblog.
 
-package handler
+package grpc
 
 import (
+	"github.com/ArthurWang23/miniblog/internal/apiserver/biz"
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
 )
 
@@ -16,8 +17,12 @@ type Handler struct {
 	// 简化服务实现过程，开发者只需要实现自己需要的方法，不必为每个方法提供一个默认的未实现错误
 	// 提高代码可维护性
 	apiv1.UnimplementedMiniBlogServer
+
+	biz biz.IBiz
 }
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(biz biz.IBiz) *Handler {
+	return &Handler{
+		biz: biz,
+	}
 }

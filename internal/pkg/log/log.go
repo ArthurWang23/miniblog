@@ -1,9 +1,3 @@
-// Copyright 2025 ArthurWang &lt;2826979176@qq.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is https://github.com/arthurwang23/miniblog. The professional
-// version of this repository is https://github.com/arthurwang23/miniblog.
-
 package log
 
 // 设计日志包
@@ -170,6 +164,8 @@ func (l *zapLogger) Fatalw(msg string, kvs ...any) {
 	l.z.Sugar().Fatalw(msg, kvs...)
 }
 
+// W方法，withContext简称
+// 由于log包会被多个请求并发调用，因此为防止id污染，每个请求都会对log包深拷贝
 func W(ctx context.Context) Logger {
 	return std.W(ctx)
 }

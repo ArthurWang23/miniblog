@@ -4,7 +4,7 @@
 // this file is https://github.com/arthurwang23/miniblog. The professional
 // version of this repository is https://github.com/arthurwang23/miniblog.
 
-package handler
+package grpc
 
 import (
 	"context"

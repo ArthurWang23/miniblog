@@ -6,8 +6,14 @@
 
 package http
 
-type Handler struct{}
+import "github.com/ArthurWang23/miniblog/internal/apiserver/biz"
 
-func NewHandler() *Handler {
-	return &Handler{}
+type Handler struct {
+	biz biz.IBiz
+}
+
+func NewHandler(biz biz.IBiz) *Handler {
+	return &Handler{
+		biz: biz,
+	}
 }
