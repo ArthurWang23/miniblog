@@ -3,6 +3,7 @@ syntax = "proto3";
 package v1;
 
 import "google/protobuf/timestamp.proto";
+import "github.com/onexstack/defaults/defaults.proto";
 
 option go_package = "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1;v1";
 
@@ -50,7 +51,7 @@ message ChangePasswordResponse {
 message CreateUserRequest{
     string username = 1;
     string password = 2;
-    optional string nickname = 3;
+    optional string nickname = 3 [(defaults.value).string = "你好世界"];
     string email = 4;
     string phone = 5;
 }

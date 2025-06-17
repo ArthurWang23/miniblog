@@ -86,3 +86,4 @@ message MessageDefaults {
 	// Defaults specifies that the messages' defaults should be applied
 	optional bool defaults = 2;
 }
+
