@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// bypass中间件，从请求中提取用户的userid并存储到上下文
 func AuthnBypasswMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := "user-000001"

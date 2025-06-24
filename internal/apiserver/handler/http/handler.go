@@ -6,14 +6,20 @@
 
 package http
 
-import "github.com/ArthurWang23/miniblog/internal/apiserver/biz"
+import (
+	"github.com/ArthurWang23/miniblog/internal/apiserver/biz"
+	"github.com/ArthurWang23/miniblog/internal/apiserver/pkg/validation"
+)
 
+// 在gin中，无法提前获知API的请求参数类型，所以无法实现在中间件中对请求参数进行校验
 type Handler struct {
 	biz biz.IBiz
+	val *validation.Validator
 }
 
-func NewHandler(biz biz.IBiz) *Handler {
+func NewHandler(biz biz.IBiz, val *validation.Validator) *Handler {
 	return &Handler{
 		biz: biz,
+		val: val,
 	}
 }

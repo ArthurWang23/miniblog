@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/ArthurWang23/miniblog/internal/apiserver/biz"
+	"github.com/ArthurWang23/miniblog/internal/apiserver/pkg/validation"
 	"github.com/ArthurWang23/miniblog/internal/apiserver/store"
 	"github.com/ArthurWang23/miniblog/internal/pkg/contextx"
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
@@ -56,6 +57,7 @@ type UnionServer struct {
 type ServerConfig struct {
 	cfg *Config
 	biz biz.IBiz
+	val *validation.Validator
 }
 
 func (cfg *Config) NewUnionServer() (*UnionServer, error) {
@@ -120,6 +122,7 @@ func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
 	return &ServerConfig{
 		cfg: cfg,
 		biz: biz.NewBiz(store),
+		val: validation.New(store),
 	}, nil
 }
 

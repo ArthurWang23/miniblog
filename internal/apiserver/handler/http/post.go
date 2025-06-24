@@ -22,5 +22,6 @@ func (h *Handler) GetPost(c *gin.Context) {
 }
 
 func (h *Handler) ListPost(c *gin.Context) {
-	core.HandleQueryRequest(c, h.biz.PostV1().List)
+	// 显式校验方法
+	core.HandleQueryRequest(c, h.biz.PostV1().List, h.val.ValidateListPostRequest)
 }

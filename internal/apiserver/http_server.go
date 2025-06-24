@@ -38,7 +38,7 @@ func (c *ServerConfig) NewGinServer() server.Server {
 func (c *ServerConfig) InstallRESTAPI(engin *gin.Engine) {
 	InstallGenericAPI(engin)
 
-	handler := handler.NewHandler(c.biz)
+	handler := handler.NewHandler(c.biz, c.val)
 
 	engin.GET("/healthz", handler.Healthz)
 	// 这两个接口比较简单，没有API版本
