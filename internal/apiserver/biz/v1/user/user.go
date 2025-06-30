@@ -83,7 +83,7 @@ func (b *userBiz) Update(ctx context.Context, rq *apiv1.UpdateUserRequest) (*api
 }
 
 func (b *userBiz) Delete(ctx context.Context, rq *apiv1.DeleteUserRequest) (*apiv1.DeleteUserResponse, error) {
-	// 只有 root 可以删除yonghu
+	// 只有 root 可以删除用户
 	// 所以这里不用where.T() 因为where.T() 会查询root用户自己
 	if err := b.store.User().Delete(ctx, where.F("userID", rq.GetUserID())); err != nil {
 		return nil, err

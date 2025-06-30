@@ -11,7 +11,7 @@ import (
 	"net"
 
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
-	genericoptions "github.com/onexstack/onexstack/pkg/options"
+	genericoptions "github.com/ArthurWang23/miniblog/pkg/options"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"

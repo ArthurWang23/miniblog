@@ -3,7 +3,7 @@ package conversion
 import (
 	"github.com/ArthurWang23/miniblog/internal/apiserver/model"
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
-	"github.com/onexstack/onexstack/pkg/core"
+	"github.com/ArthurWang23/miniblog/pkg/core"
 )
 
 // 将不同层之间的数据类型转换都在同一个conversion包中实现  所以要避免出现循环依赖

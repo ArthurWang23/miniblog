@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
+	genericoptions "github.com/ArthurWang23/miniblog/pkg/options"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	genericoptions "github.com/onexstack/onexstack/pkg/options"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"

@@ -6,7 +6,7 @@ import (
 	"github.com/ArthurWang23/miniblog/internal/pkg/contextx"
 	"github.com/ArthurWang23/miniblog/internal/pkg/errno"
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
-	genericvalidation "github.com/onexstack/onexstack/pkg/validation"
+	genericvalidation "github.com/ArthurWang23/miniblog/pkg/validation"
 )
 
 func (v *Validator) ValidateUserRules() genericvalidation.Rules {

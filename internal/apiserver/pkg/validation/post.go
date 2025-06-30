@@ -5,9 +5,9 @@ import (
 
 	"github.com/ArthurWang23/miniblog/internal/pkg/errno"
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
+	genericvalidation "github.com/ArthurWang23/miniblog/pkg/validation"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	genericvalidation "github.com/onexstack/onexstack/pkg/validation"
 )
 
 func (v *Validator) ValidatePostRules() genericvalidation.Rules {
@@ -20,13 +20,13 @@ func (v *Validator) ValidatePostRules() genericvalidation.Rules {
 		},
 		"Title": func(value any) error {
 			if value.(string) == "" {
-				return errno.ErrInvalidArgument.WithMessage("title cannot be emoty")
+				return errno.ErrInvalidArgument.WithMessage("title cannot be empty")
 			}
 			return nil
 		},
 		"Content": func(value any) error {
 			if value.(string) == "" {
-				return errno.ErrInvalidArgument.WithMessage("context cannot be emoty")
+				return errno.ErrInvalidArgument.WithMessage("context cannot be empty")
 			}
 			return nil
 		},
