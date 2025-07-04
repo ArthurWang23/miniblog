@@ -3,9 +3,10 @@ package validation
 import (
 	"context"
 	"fmt"
-	"k8s.io/klog/v2"
 	"reflect"
 	"strings"
+
+	"k8s.io/klog/v2"
 )
 
 type Validator struct {
@@ -14,6 +15,20 @@ type Validator struct {
 
 func NewValidator(customValidator any) *Validator {
 	return &Validator{registry: extractValidationMethods(customValidator)}
+}
+
+func (v *Validator) Validate(ctx context.Context, request any) error {
+	validationFunc, ok := v.registry[reflect.TypeOf(request).Elem().Name()]
+	if !ok {
+		return nil // No validation function found for the request type
+	}
+
+	result := validationFunc.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(request)})
+	if !result[0].IsNil() {
+		return result[0].Interface().(error)
+	}
+
+	return nil
 }
 
 // extract and return a map of validation functions from the provided custom validation

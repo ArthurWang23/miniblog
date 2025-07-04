@@ -43,9 +43,9 @@ func (c *ServerConfig) InstallRESTAPI(engin *gin.Engine) {
 	engin.GET("/healthz", handler.Healthz)
 	// 这两个接口比较简单，没有API版本
 	engin.POST("/login", handler.Login)
-	engin.PUT("/refresh-token", handler.RefreshToken)
+	engin.PUT("/refresh-token", mw.AuthnBypasswMiddleware(), handler.RefreshToken)
 
-	authMiddlewares := []gin.HandlerFunc{}
+	authMiddlewares := []gin.HandlerFunc{mw.AuthnBypasswMiddleware()}
 	v1 := engin.Group("/v1")
 	{
 		userv1 := v1.Group("/users")

@@ -34,6 +34,6 @@ func (h *Handler) GetUser(ctx context.Context, rq *apiv1.GetUserRequest) (*apiv1
 	return h.biz.UserV1().Get(ctx, rq)
 }
 
-func (h *Handler) ListUsers(ctx context.Context, rq *apiv1.ListUsersRequest) (*apiv1.ListUsersResponse, error) {
+func (h *Handler) ListUser(ctx context.Context, rq *apiv1.ListUsersRequest) (*apiv1.ListUsersResponse, error) {
 	return h.biz.UserV1().List(ctx, rq)
 }

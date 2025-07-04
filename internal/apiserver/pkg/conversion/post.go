@@ -3,7 +3,7 @@ package conversion
 import (
 	"github.com/ArthurWang23/miniblog/internal/apiserver/model"
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
-	"github.com/onexstack/onexstack/pkg/core"
+	"github.com/ArthurWang23/miniblog/pkg/core"
 )
 
 func PostModelToPostV1(postModel *model.PostM) *apiv1.Post {

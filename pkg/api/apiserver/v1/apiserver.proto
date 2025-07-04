@@ -12,7 +12,8 @@ import "google/protobuf/empty.proto";// 导入空消息
 import "apiserver/v1/healthz.proto";// 健康检查消息定义
 import "google/api/annotations.proto";// 定义HTTP映射规则  通过option(google.api.http)实现grpc到http的映射
 import "protoc-gen-openapiv2/options/annotations.proto";// 为生成OpenAPI文档提供相关注释
-
+import "apiserver/v1/post.proto";
+import "apiserver/v1/user.proto";
 // 定义MiniBlog服务
 // 添加HTTP映射规则，实现反向代理
 // 指定协议缓冲区文件生成的go代码所在的包路径
@@ -59,5 +60,193 @@ service MiniBlog {
             // 指定操作的标签
             tags : "服务治理";
         };
-    } 
+    }
+
+    // Login 用户登录
+    rpc Login(LoginRequest) returns (LoginResponse) {
+        option (google.api.http) = {
+            post: "/login",
+            body: "*",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "用户登录";
+            operation_id: "Login";
+            description: "";
+            tags: "用户管理";
+        };
+    }
+
+    // RefreshToken 刷新令牌
+    rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
+        option (google.api.http) = {
+          put: "/refresh-token",
+          body: "*",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "刷新令牌";
+            operation_id: "RefreshToken";
+            description: "";
+            tags: "用户管理";
+        };
+    }
+
+
+    // ChangePassword 修改密码
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {
+        option (google.api.http) = {
+            put: "/v1/users/{userID}/change-password",
+            body: "*",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "修改密码";
+            operation_id: "ChangePassword";
+            tags: "用户管理";
+        };
+    }
+
+    // CreateUser 创建用户
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+        option (google.api.http) = {
+            post: "/v1/users",
+            body: "*",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "创建用户";
+            operation_id: "CreateUser";
+            tags: "用户管理";
+        };
+    }
+
+    // UpdateUser 更新用户信息
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
+        option (google.api.http) = {
+            put: "/v1/users/{userID}",
+            body: "*",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "更新用户信息";
+            operation_id: "UpdateUser";
+            tags: "用户管理";
+        };
+    }
+
+    // DeleteUser 删除用户
+    rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+        option (google.api.http) = {
+            delete: "/v1/users/{userID}",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "删除用户";
+            operation_id: "DeleteUser";
+            tags: "用户管理";
+        };
+    }
+
+    // GetUser 获取用户信息
+    rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+        option (google.api.http) = {
+            get: "/v1/users/{userID}",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "获取用户信息";
+            operation_id: "GetUser";
+            tags: "用户管理";
+        };
+    }
+
+    // ListUser 列出所有用户
+    rpc ListUser(ListUsersRequest) returns (ListUsersResponse) {
+        option (google.api.http) = {
+            get: "/v1/users",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "列出所有用户";
+            operation_id: "ListUser";
+            tags: "用户管理";
+        };
+    }
+
+    // CreatePost 创建文章
+    rpc CreatePost(CreatePostRequest) returns (CreatePostResponse) {
+        option (google.api.http) = {
+            post: "/v1/posts",
+            body: "*",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "创建文章";
+            operation_id: "CreatePost";
+            tags: "博客管理";
+        };
+    }
+
+    // UpdatePost 更新文章
+    rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse) {
+        // 将 UpdatePost 映射为 HTTP PUT 请求，并通过 URL /v1/posts/{postID} 访问
+        // {postID} 是一个路径参数，grpc-gateway 会根据 postID 名称，将其解析并映射到
+        // UpdatePostRequest 类型中相应的字段.
+        // body: "*" 表示请求体中的所有字段都会映射到 UpdatePostRequest 类型。
+        option (google.api.http) = {
+            put: "/v1/posts/{postID}",
+            body: "*",
+        };
+
+        // 提供用于生成 OpenAPI 文档的注解
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            // 在文档中简要描述此操作的功能：更新文章。
+            summary: "更新文章";
+            // 为此操作指定唯一标识符（UpdatePost），便于跟踪
+            operation_id: "UpdatePost";
+            // 将此操作归类到 "博客管理" 标签组，方便在 OpenAPI 文档中组织接口分组
+            tags: "博客管理";
+        };
+    }
+
+    // DeletePost 删除文章
+    rpc DeletePost(DeletePostRequest) returns (DeletePostResponse) {
+        option (google.api.http) = {
+            delete: "/v1/posts",
+            body: "*",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "删除文章";
+            operation_id: "DeletePost";
+            tags: "博客管理";
+        };
+    }
+
+    // GetPost 获取文章信息
+    rpc GetPost(GetPostRequest) returns (GetPostResponse) {
+        option (google.api.http) = {
+            get: "/v1/posts/{postID}",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "获取文章信息";
+            operation_id: "GetPost";
+            tags: "博客管理";
+        };
+    }
+
+    // ListPost 列出所有文章
+    rpc ListPost(ListPostRequest) returns (ListPostResponse) {
+        option (google.api.http) = {
+            get: "/v1/posts",
+        };
+
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "列出所有文章";
+            operation_id: "ListPost";
+            tags: "博客管理";
+        };
+    }
 }

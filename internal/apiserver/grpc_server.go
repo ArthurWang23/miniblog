@@ -13,8 +13,8 @@ import (
 	mw "github.com/ArthurWang23/miniblog/internal/pkg/middleware/grpc"
 	"github.com/ArthurWang23/miniblog/internal/pkg/server"
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
+	genericvalidation "github.com/ArthurWang23/miniblog/pkg/validation"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	genericvalidation "github.com/onexstack/onexstack/pkg/validation"
 	"google.golang.org/grpc"
 )
 
