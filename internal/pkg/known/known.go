@@ -14,10 +14,12 @@ const (
 
 	// XUserID 用来定义上下文的键，代表请求用户ID UserID整个用户生命周期唯一
 	XUserID = "x-user-id"
+
+	XUsername = "x-username"
 )
 
 const (
 	AdminUsername = "root"
 
-	MaxErrGroupConcurrency = 100
+	MaxErrGroupConcurrency = 1000
 )

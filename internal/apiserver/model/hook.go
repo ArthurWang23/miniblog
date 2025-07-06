@@ -1,8 +1,8 @@
 package model
 
 import (
-	"github.com/ArthurWang23/miniblog/internal/pkg/auth"
 	"github.com/ArthurWang23/miniblog/internal/pkg/rid"
+	"github.com/ArthurWang23/miniblog/pkg/auth"
 	"gorm.io/gorm"
 )
 

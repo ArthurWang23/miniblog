@@ -18,13 +18,18 @@ import (
 	"time"
 
 	"github.com/ArthurWang23/miniblog/internal/apiserver/biz"
+	"github.com/ArthurWang23/miniblog/internal/apiserver/model"
 	"github.com/ArthurWang23/miniblog/internal/apiserver/pkg/validation"
 	"github.com/ArthurWang23/miniblog/internal/apiserver/store"
 	"github.com/ArthurWang23/miniblog/internal/pkg/contextx"
+	"github.com/ArthurWang23/miniblog/internal/pkg/known"
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
+	mw "github.com/ArthurWang23/miniblog/internal/pkg/middleware/gin"
 	"github.com/ArthurWang23/miniblog/internal/pkg/server"
+	"github.com/ArthurWang23/miniblog/pkg/auth"
 	genericoptions "github.com/ArthurWang23/miniblog/pkg/options"
 	"github.com/ArthurWang23/miniblog/pkg/store/where"
+	"github.com/ArthurWang23/miniblog/pkg/token"
 	"gorm.io/gorm"
 )
 
@@ -58,6 +63,9 @@ type ServerConfig struct {
 	cfg *Config
 	biz biz.IBiz
 	val *validation.Validator
+
+	retriever mw.UserRetriever
+	authz     *auth.Authz
 }
 
 func (cfg *Config) NewUnionServer() (*UnionServer, error) {
@@ -65,6 +73,9 @@ func (cfg *Config) NewUnionServer() (*UnionServer, error) {
 	where.RegisterTenant("userID", func(ctx context.Context) string {
 		return contextx.UserID(ctx)
 	})
+
+	// 初始化token
+	token.Init(cfg.JWTKey, known.XUserID, cfg.Expiration)
 	serverConfig, err := cfg.NewServerConfig()
 	if err != nil {
 		return nil, err
@@ -119,13 +130,27 @@ func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
 		return nil, err
 	}
 	store := store.NewStore(db)
+	authz, err := auth.NewAuthz(store.DB(context.TODO()))
+	if err != nil {
+		return nil, err
+	}
 	return &ServerConfig{
-		cfg: cfg,
-		biz: biz.NewBiz(store),
-		val: validation.New(store),
+		cfg:       cfg,
+		biz:       biz.NewBiz(store, authz),
+		val:       validation.New(store),
+		retriever: &UserRetriever{store: store},
+		authz:     authz,
 	}, nil
 }
 
 func (cfg *Config) NewDB() (*gorm.DB, error) {
 	return cfg.MySQLOptions.NewDB()
+}
+
+type UserRetriever struct {
+	store store.IStore
+}
+
+func (r *UserRetriever) GetUser(ctx context.Context, userID string) (*model.UserM, error) {
+	return r.store.User().Get(ctx, where.F("userID", userID))
 }

@@ -3,18 +3,18 @@ package user
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/ArthurWang23/miniblog/internal/apiserver/model"
 	"github.com/ArthurWang23/miniblog/internal/apiserver/pkg/conversion"
 	"github.com/ArthurWang23/miniblog/internal/apiserver/store"
-	"github.com/ArthurWang23/miniblog/internal/pkg/auth"
 	"github.com/ArthurWang23/miniblog/internal/pkg/contextx"
 	"github.com/ArthurWang23/miniblog/internal/pkg/errno"
 	"github.com/ArthurWang23/miniblog/internal/pkg/known"
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
+	"github.com/ArthurWang23/miniblog/pkg/auth"
 	"github.com/ArthurWang23/miniblog/pkg/store/where"
+	"github.com/ArthurWang23/miniblog/pkg/token"
 	"github.com/jinzhu/copier"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -39,13 +39,15 @@ type UserExpansion interface {
 
 type userBiz struct {
 	store store.IStore
+	authz *auth.Authz
 }
 
 var _ UserBiz = (*userBiz)(nil)
 
-func New(store store.IStore) *userBiz {
+func New(store store.IStore, authz *auth.Authz) *userBiz {
 	return &userBiz{
 		store: store,
+		authz: authz,
 	}
 }
 func (b *userBiz) Create(ctx context.Context, rq *apiv1.CreateUserRequest) (*apiv1.CreateUserResponse, error) {
@@ -53,6 +55,13 @@ func (b *userBiz) Create(ctx context.Context, rq *apiv1.CreateUserRequest) (*api
 	_ = copier.Copy(&userM, rq)
 	if err := b.store.User().Create(ctx, &userM); err != nil {
 		return nil, err
+	}
+
+	// 创建用户时给用户添加普通用户role::user角色
+	// 删除用户时删除其对应角色
+	if _, err := b.authz.AddGroupingPolicy(userM.UserID, known.RoleUser); err != nil {
+		log.W(ctx).Errorw("Failed to add grouping policy for user", "user", userM.UserID, "role", known.RoleUser)
+		return nil, errno.ErrAddRole.WithMessage(err.Error())
 	}
 	return &apiv1.CreateUserResponse{
 		UserID: userM.UserID,
@@ -87,6 +96,10 @@ func (b *userBiz) Delete(ctx context.Context, rq *apiv1.DeleteUserRequest) (*api
 	// 所以这里不用where.T() 因为where.T() 会查询root用户自己
 	if err := b.store.User().Delete(ctx, where.F("userID", rq.GetUserID())); err != nil {
 		return nil, err
+	}
+	if _, err := b.authz.RemoveGroupingPolicy(rq.GetUserID(), known.RoleUser); err != nil {
+		log.W(ctx).Errorw("Failed to remove grouping policy for user", "user", rq.GetUserID(), "role", known.RoleUser)
+		return nil, errno.ErrRemoveRole.WithMessage(err.Error())
 	}
 	return &apiv1.DeleteUserResponse{}, nil
 }
@@ -166,15 +179,24 @@ func (b *userBiz) Login(ctx context.Context, rq *apiv1.LoginRequest) (*apiv1.Log
 		log.W(ctx).Errorw("Failed to compare password", "err", err)
 		return nil, errno.ErrPasswordInvalid
 	}
+	// 匹配成功 签发token
+	tokenStr, expireAt, err := token.Sign(userM.UserID)
+	if err != nil {
+		return nil, errno.ErrSignToken
+	}
 	return &apiv1.LoginResponse{
-		Token:    "<placeholder>",
-		ExpireAt: timestamppb.New(time.Now().Add(time.Hour * 2)),
+		Token:    tokenStr,
+		ExpireAt: timestamppb.New(expireAt),
 	}, nil
 }
 
 func (b *userBiz) RefreshToken(ctx context.Context, rq *apiv1.RefreshTokenRequest) (*apiv1.RefreshTokenResponse, error) {
-	// 还没实现
-	return &apiv1.RefreshTokenResponse{Token: "<placeholder>", ExpireAt: timestamppb.New(time.Now().Add(2 * time.Hour))}, nil
+	tokenStr, expireAt, err := token.Sign(contextx.UserID(ctx))
+	if err != nil {
+		log.W(ctx).Errorw("Failed to sign token", "err", err)
+		return nil, errno.ErrSignToken
+	}
+	return &apiv1.RefreshTokenResponse{Token: tokenStr, ExpireAt: timestamppb.New(expireAt)}, nil
 }
 
 func (b *userBiz) ChangePassword(ctx context.Context, rq *apiv1.ChangePasswordRequest) (*apiv1.ChangePasswordResponse, error) {

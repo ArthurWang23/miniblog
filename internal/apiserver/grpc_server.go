@@ -14,6 +14,8 @@ import (
 	"github.com/ArthurWang23/miniblog/internal/pkg/server"
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
 	genericvalidation "github.com/ArthurWang23/miniblog/pkg/validation"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 )
@@ -35,7 +37,11 @@ func (c *ServerConfig) NewGRPCServerOr() (server.Server, error) {
 	serverOptions := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
 			mw.RequestIDInterceptor(),
-			mw.AuthnBypasswInterceptor(),
+			// 给grpc服务器添加认证拦截器和白名单功能
+			// 在认证时排出白名单中的方法
+			selector.UnaryServerInterceptor(mw.AuthnInterceptor(c.retriever), NewAuthnWhiteListMatcher()),
+			// 授权拦截器
+			selector.UnaryServerInterceptor(mw.AuthzInterceptor(c.authz), NewAuthzWhiteListMatcher()),
 			mw.DefaulterInterceptor(),
 			mw.ValidatorInterceptor(genericvalidation.NewValidator(c.val)),
 		),
@@ -89,4 +95,30 @@ func (s *grpcServer) RunOrDie() {
 
 func (s *grpcServer) GracefulStop(ctx context.Context) {
 	s.stop(ctx)
+}
+
+// 创建方法匹配器，使用MatchFunc定义一组无需认证的方法（如健康检查，用户创建，登录）
+func NewAuthnWhiteListMatcher() selector.Matcher {
+	whitelist := map[string]struct{}{
+		apiv1.MiniBlog_Healthz_FullMethodName:    {},
+		apiv1.MiniBlog_CreateUser_FullMethodName: {},
+		apiv1.MiniBlog_Login_FullMethodName:      {},
+	}
+	return selector.MatchFunc(func(ctx context.Context, call interceptors.CallMeta) bool {
+		_, ok := whitelist[call.FullMethod()]
+		return !ok
+	})
+}
+
+func NewAuthzWhiteListMatcher() selector.Matcher {
+	whitelist := map[string]struct{}{
+		apiv1.MiniBlog_Healthz_FullMethodName:    {},
+		apiv1.MiniBlog_CreateUser_FullMethodName: {},
+		apiv1.MiniBlog_Login_FullMethodName:      {},
+	}
+	return selector.MatchFunc(func(ctx context.Context, call interceptors.CallMeta) bool {
+		_, ok := whitelist[call.FullMethod()]
+		return !ok
+	})
+
 }
