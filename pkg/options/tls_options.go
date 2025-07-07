@@ -14,13 +14,17 @@ var _ IOptions = (*TLSOptions)(nil)
 
 // TLSOptions is the TLS cert info for serving secure traffic.
 type TLSOptions struct {
+	// 是否启用TLS
 	UseTLS bool `json:"use-tls" mapstructure:"use-tls"`
-
+	// 是否跳过证书校验，若true，则在客户端验证服务端证书时，会忽略证书的真实性或有效性，通常用于测试环境
 	InsecureSkipVerify bool   `json:"insecure-skip-verify" mapstructure:"insecure-skip-verify"`
 	ServerName         string `json:"server-name" mapstructure:"server-name"`
-	CaCert             string `json:"ca-file" mapstructure:"ca-file"`
-	Cert               string `json:"cert" mapstructure:"cert"`
-	Key                string `json:"key" mapstructure:"key"`
+	// 设置CA
+	CaCert string `json:"ca-file" mapstructure:"ca-file"`
+	// 设置客户端或服务端的证书文件路径
+	Cert string `json:"cert" mapstructure:"cert"`
+	// 与Cert对应的私钥文件路径，用于证明证书持有者的身份以及完成TLS握手过程
+	Key string `json:"key" mapstructure:"key"`
 }
 
 func NewTLSOptions() *TLSOptions {

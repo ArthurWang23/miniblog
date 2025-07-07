@@ -50,6 +50,8 @@ type ServerOptions struct {
 	HTTPOptions *genericoptions.HTTPOptions `json:"http" mapstructure:"http"`
 
 	MySQLOptions *genericoptions.MySQLOptions `json:"mysql" mapstructure:"mysql"`
+
+	TLSOptions *genericoptions.TLSOptions `json:"tls" mapstructure:"tls"`
 }
 
 // 创建ServerOptions的默认配置
@@ -61,6 +63,7 @@ func NewServerOptions() *ServerOptions {
 		GRPCOptions:  genericoptions.NewGRPCOptions(),
 		HTTPOptions:  genericoptions.NewHTTPOptions(),
 		MySQLOptions: genericoptions.NewMySQLOptions(),
+		TLSOptions:   genericoptions.NewTLSOptions(),
 	}
 	opts.GRPCOptions.Addr = ":6666"
 	opts.HTTPOptions.Addr = ":5555"
@@ -75,6 +78,7 @@ func (o *ServerOptions) AddFlags(fs *pflag.FlagSet) {
 	o.GRPCOptions.AddFlags(fs)
 	o.HTTPOptions.AddFlags(fs)
 	o.MySQLOptions.AddFlags(fs)
+	o.TLSOptions.AddFlags(fs)
 }
 
 // Validate校验ServerOptions中的选项是否合法
@@ -88,6 +92,9 @@ func (o *ServerOptions) Validate() error {
 		errs = append(errs, errors.New("JWT key must be at least 6 characters long"))
 	}
 
+	errs = append(errs, o.TLSOptions.Validate()...)
+	errs = append(errs, o.HTTPOptions.Validate()...)
+	errs = append(errs, o.MySQLOptions.Validate()...)
 	if stringsutil.StringIn(o.ServerMode, []string{apiserver.GRPCServerMode, apiserver.GRPCGatewayServerMode}) {
 		errs = append(errs, o.GRPCOptions.Validate()...)
 	}
@@ -105,5 +112,6 @@ func (o *ServerOptions) Config() (*apiserver.Config, error) {
 		GRPCOptions:  o.GRPCOptions,
 		HTTPOptions:  o.HTTPOptions,
 		MySQLOptions: o.MySQLOptions,
+		TLSOptions:   o.TLSOptions,
 	}, nil
 }

@@ -29,7 +29,7 @@ func (c *ServerConfig) NewGinServer() server.Server {
 	engin.Use(gin.Recovery(), mw.NoCache, mw.Cors, mw.Secure, mw.RequestIDMiddleware())
 	// 注册rest api 路由
 	c.InstallRESTAPI(engin)
-	httpsrv := server.NewHTTPServer(c.cfg.HTTPOptions, engin)
+	httpsrv := server.NewHTTPServer(c.cfg.HTTPOptions, c.cfg.TLSOptions, engin)
 	return &ginServer{
 		srv: httpsrv,
 	}

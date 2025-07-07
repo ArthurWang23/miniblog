@@ -86,3 +86,26 @@ protoc: # 编译protobuf文件
 		$(shell find $(APIROOT) -name *.proto)
 	@find . -name "*.pb.go" -exec protoc-go-inject-tag -input={} \;
 
+.PHONY: ca
+ca: # 生成CA文件
+	@mkdir -p $(OUTPUT_DIR)/cert
+	@# 1.生成根证书私钥 (CA Key)
+	@openssl genrsa -out $(OUTPUT_DIR)/cert/ca.key 4096
+	@# 2.使用根私钥生成证书签名请求 (CA CSR)
+	@openssl req -new -nodes -key $(OUTPUT_DIR)/cert/ca.key -sha256 -out $(OUTPUT_DIR)/cert/ca.csr \
+		-subj "/C=CN/ST=Shanghai/L=Shanghai/O=miniblog/OU=it/CN=127.0.0.1/emailAddress=2826979176@qq.com"
+	@# 3.使用根私钥签发根证书 (CA CRT) 使其自签名 -req指定输入文件为证书请求 -signkey指定用于自签名的私钥文件
+	@openssl x509 -req -days 365 -in $(OUTPUT_DIR)/cert/ca.csr -signkey $(OUTPUT_DIR)/cert/ca.key -out $(OUTPUT_DIR)/cert/ca.crt
+	@# 4.生成服务端私钥
+	@openssl genrsa -out $(OUTPUT_DIR)/cert/server.key 2048
+	@# 5.使用服务端私钥生成服务端证书签名系统
+	@openssl req -new -key $(OUTPUT_DIR)/cert/server.key -out $(OUTPUT_DIR)/cert/server.csr \
+		-subj "/C=CN/ST=Shanghai/L=Shanghai/O=serverdevops/OU=serverit/CN=localhost/emailAddress=2826979176@qq.com" \
+		-addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+	@# 6.使用根证书(CA)签发服务端证书
+	@echo "[v3_req]" > $(OUTPUT_DIR)/cert/v3.ext
+	@echo "subjectAltName=DNS:localhost,IP:127.0.0.1" >> $(OUTPUT_DIR)/cert/v3.ext
+	@openssl x509 -days 356 -sha256 -req -CA $(OUTPUT_DIR)/cert/ca.crt -CAkey $(OUTPUT_DIR)/cert/ca.key \
+		-CAcreateserial -in $(OUTPUT_DIR)/cert/server.csr -out $(OUTPUT_DIR)/cert/server.crt -extensions v3_req \
+		-extfile $(OUTPUT_DIR)/cert/v3.ext
+	@rm -f $(OUTPUT_DIR)/cert/v3.ext

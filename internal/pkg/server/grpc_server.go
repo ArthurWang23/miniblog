@@ -13,6 +13,7 @@ import (
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
 	genericoptions "github.com/ArthurWang23/miniblog/pkg/options"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
@@ -26,12 +27,19 @@ type GRPCServer struct {
 func NewGRPCServer(
 	grpcOptions *genericoptions.GRPCOptions,
 	serverOptions []grpc.ServerOption,
+	tlsOptions *genericoptions.TLSOptions,
 	registerServer func(grpc.ServiceRegistrar),
 ) (*GRPCServer, error) {
 	lis, err := net.Listen("tcp", grpcOptions.Addr)
 	if err != nil {
 		log.Errorw("Failed to listen", "err", err)
 		return nil, err
+	}
+
+	// 实现grpc服务器以TLS模式通信
+	if tlsOptions != nil && tlsOptions.UseTLS {
+		tlsConfig := tlsOptions.MustTLSConfig()
+		serverOptions = append(serverOptions, grpc.Creds(credentials.NewTLS(tlsConfig)))
 	}
 	grpcsrv := grpc.NewServer(serverOptions...)
 	registerServer(grpcsrv)

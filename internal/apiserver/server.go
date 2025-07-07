@@ -52,6 +52,7 @@ type Config struct {
 	GRPCOptions  *genericoptions.GRPCOptions
 	HTTPOptions  *genericoptions.HTTPOptions
 	MySQLOptions *genericoptions.MySQLOptions
+	TLSOptions   *genericoptions.TLSOptions
 }
 
 // 根据ServerMode决定要启动的服务器类型
