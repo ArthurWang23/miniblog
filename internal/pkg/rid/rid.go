@@ -1,6 +1,6 @@
 package rid
 
-import "github.com/onexstack/onexstack/pkg/id"
+import "github.com/ArthurWang23/miniblog/pkg/id"
 
 // 生成唯一标识符
 // 需要为每一条REST资源生成唯一标识符uid（Unique Identifier UID）

@@ -1,0 +1,14 @@
+mode: set
+github.com/ArthurWang23/miniblog/internal/pkg/rid/rid.go:48.39,50.2 1 1
+github.com/ArthurWang23/miniblog/internal/pkg/rid/rid.go:53.50,62.2 2 1
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:12.20,18.2 4 1
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:21.29,24.39 3 1
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:24.39,26.3 1 0
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:27.2,27.39 1 1
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:27.39,31.3 3 1
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:31.8,33.57 1 0
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:33.57,34.97 1 0
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:37.2,37.11 1 1
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:40.46,42.34 2 1
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:42.34,44.3 1 0
+github.com/ArthurWang23/miniblog/internal/pkg/rid/salt.go:45.2,45.26 1 1

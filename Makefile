@@ -41,7 +41,7 @@ GO_LDFLAGS += \
  
 # 定义 Makefile all 伪目标，执行 `make` 时，会默认会执行 all 伪目标
 .PHONY: all
-all: tidy format build add-copyright
+all: tidy format build cover add-copyright
  
 # ==============================================================================
 # 定义其他需要的伪目标
@@ -109,3 +109,18 @@ ca: # 生成CA文件
 		-CAcreateserial -in $(OUTPUT_DIR)/cert/server.csr -out $(OUTPUT_DIR)/cert/server.crt -extensions v3_req \
 		-extfile $(OUTPUT_DIR)/cert/v3.ext
 	@rm -f $(OUTPUT_DIR)/cert/v3.ext
+
+
+.PHONY: test
+test: # 执行单元测试.
+	@echo "===========> Running unit tests"
+	@mkdir -p $(OUTPUT_DIR)
+	@go test -race -cover \
+		-coverprofile=$(OUTPUT_DIR)/coverage.out \
+		-timeout=10m -shuffle=on -short \
+		-v `go list ./...|egrep -v 'tools|vendor|third_party'`
+
+.PHONY: cover
+cover: test ## 执行单元测试，并校验覆盖率阈值.
+	@echo "===========> Running code coverage tests"
+	@go tool cover -func=$(OUTPUT_DIR)/coverage.out | awk -v target=$(COVERAGE) -f $(PROJ_ROOT_DIR)/scripts/coverage.awk
