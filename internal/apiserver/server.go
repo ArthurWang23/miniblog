@@ -77,20 +77,11 @@ func (cfg *Config) NewUnionServer() (*UnionServer, error) {
 
 	// 初始化token
 	token.Init(cfg.JWTKey, known.XUserID, cfg.Expiration)
-	serverConfig, err := cfg.NewServerConfig()
-	if err != nil {
-		return nil, err
-	}
+
 	log.Infow("Initializing federation server", "server-mode", cfg.ServerMode)
 
-	// 根据服务模式创建对应的服务实例
-	var srv server.Server
-	switch cfg.ServerMode {
-	case GinServerMode:
-		srv, err = serverConfig.NewGinServer(), nil
-	default:
-		srv, err = serverConfig.NewGRPCServerOr()
-	}
+	// 创建服务配置，这些配置可用来创建服务器
+	srv, err := InitializeWebServer(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -125,25 +116,6 @@ func (s *UnionServer) Run() error {
 	return nil
 }
 
-func (cfg *Config) NewServerConfig() (*ServerConfig, error) {
-	db, err := cfg.NewDB()
-	if err != nil {
-		return nil, err
-	}
-	store := store.NewStore(db)
-	authz, err := auth.NewAuthz(store.DB(context.TODO()))
-	if err != nil {
-		return nil, err
-	}
-	return &ServerConfig{
-		cfg:       cfg,
-		biz:       biz.NewBiz(store, authz),
-		val:       validation.New(store),
-		retriever: &UserRetriever{store: store},
-		authz:     authz,
-	}, nil
-}
-
 func (cfg *Config) NewDB() (*gorm.DB, error) {
 	return cfg.MySQLOptions.NewDB()
 }
@@ -154,4 +126,17 @@ type UserRetriever struct {
 
 func (r *UserRetriever) GetUser(ctx context.Context, userID string) (*model.UserM, error) {
 	return r.store.User().Get(ctx, where.F("userID", userID))
+}
+
+func ProviderDB(cfg *Config) (*gorm.DB, error) {
+	return cfg.NewDB()
+}
+
+func NewWebServer(serverMode string, serverConfig *ServerConfig) (server.Server, error) {
+	switch serverMode {
+	case GinServerMode:
+		return serverConfig.NewGinServer(), nil
+	default:
+		return serverConfig.NewGRPCServerOr()
+	}
 }

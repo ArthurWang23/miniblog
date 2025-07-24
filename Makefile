@@ -41,7 +41,7 @@ GO_LDFLAGS += \
  
 # 定义 Makefile all 伪目标，执行 `make` 时，会默认会执行 all 伪目标
 .PHONY: all
-all: tidy format build cover add-copyright
+all: tidy format lint build add-copyright
  
 # ==============================================================================
 # 定义其他需要的伪目标
@@ -124,3 +124,9 @@ test: # 执行单元测试.
 cover: test ## 执行单元测试，并校验覆盖率阈值.
 	@echo "===========> Running code coverage tests"
 	@go tool cover -func=$(OUTPUT_DIR)/coverage.out | awk -v target=$(COVERAGE) -f $(PROJ_ROOT_DIR)/scripts/coverage.awk
+
+
+.PHONY:lint
+lint: # 执行lint检查.
+	@echo "===========> Running golangci to lint source codes"
+	@golangci-lint run -c $(PROJ_ROOT_DIR)/.golangci.yaml $(PROJ_ROOT_DIR)/...

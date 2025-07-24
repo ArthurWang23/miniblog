@@ -51,7 +51,7 @@ func (v *Validator) ValidateGetPostRequest(ctx context.Context, rq *apiv1.GetPos
 
 func (v *Validator) ValidateListPostRequest(ctx context.Context, rq *apiv1.ListPostRequest) error {
 	if err := validation.Validate(rq.GetTitle(), validation.Length(5, 100), is.URL); err != nil {
-		return errno.ErrInvalidArgument.WithMessage(err.Error())
+		return errno.ErrInvalidArgument.WithMessage("%s", err.Error())
 	}
 	return genericvalidation.ValidateSelectedFields(rq, v.ValidatePostRules(), "Offset", "Limit")
 

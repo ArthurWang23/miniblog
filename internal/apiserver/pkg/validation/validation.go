@@ -5,6 +5,7 @@ import (
 
 	"github.com/ArthurWang23/miniblog/internal/apiserver/store"
 	"github.com/ArthurWang23/miniblog/internal/pkg/errno"
+	"github.com/google/wire"
 )
 
 // 参数校验
@@ -19,44 +20,49 @@ type Validator struct {
 	store store.IStore
 }
 
+var (
+	// 预编译正则表达式 提高性能
+	lengthRegex = regexp.MustCompile(`^.{3,20}$`)                                        // 长度3-20
+	validRegex  = regexp.MustCompile(`^[A-Za-z0-9_]+$`)                                  // 只包含字母、数字和下划线
+	letterRegex = regexp.MustCompile(`[A-Za-z]`)                                         // 至少包含一个字母
+	numberRegex = regexp.MustCompile(`\d`)                                               // 至少包含一个数字
+	emailRegex  = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`) // 邮箱格式
+	phoneRegex  = regexp.MustCompile(`^1[3-9]\d{9}$`)                                    // 中国手机号
+)
+
+var ProviderSet = wire.NewSet(New)
+
 func New(store store.IStore) *Validator {
 	return &Validator{store: store}
 }
 
 func isValidUsername(username string) bool {
-	var (
-		lengthRegex = `^.{3,20}$`       // 长度3-20
-		validRegex  = `^[A-Za-z0-9_]+$` // 只包含字母、数字和下划线
-	)
 
-	if matched, _ := regexp.MatchString(lengthRegex, username); !matched {
+	if !lengthRegex.MatchString(username) {
 		return false
 	}
 
-	if matched, _ := regexp.MatchString(validRegex, username); !matched {
+	if !validRegex.MatchString(username) {
 		return false
 	}
 	return true
 }
 
 func isValidPassword(password string) error {
-	if password == "" {
+	switch {
+	// 检查新密码是否为空
+	case password == "":
 		return errno.ErrInvalidArgument.WithMessage("password cannot be empty")
-	}
-	if len(password) < 6 {
+	// 检查新密码的长度要求
+	case len(password) < 6:
 		return errno.ErrInvalidArgument.WithMessage("password must be at least 6 characters long")
-	}
-
-	letterPattern := regexp.MustCompile(`[A-Za-z]`)
-	if !letterPattern.MatchString(password) {
+	// 使用正则表达式检查是否至少包含一个字母
+	case !letterRegex.MatchString(password):
 		return errno.ErrInvalidArgument.WithMessage("password must contain at least one letter")
-	}
-
-	numberPattern := regexp.MustCompile(`\d`)
-	if !numberPattern.MatchString(password) {
+	// 使用正则表达式检查是否至少包含一个数字
+	case !numberRegex.MatchString(password):
 		return errno.ErrInvalidArgument.WithMessage("password must contain at least one number")
 	}
-
 	return nil
 }
 
@@ -65,8 +71,7 @@ func isValidEmail(email string) error {
 		return errno.ErrInvalidArgument.WithMessage("email cannot be empty")
 	}
 
-	emailPattern := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	if !emailPattern.MatchString(email) {
+	if !emailRegex.MatchString(email) {
 		return errno.ErrInvalidArgument.WithMessage("invalid email format")
 	}
 	return nil
@@ -77,8 +82,7 @@ func isValidPhone(phone string) error {
 		return errno.ErrInvalidArgument.WithMessage("phone cannot be empty")
 	}
 
-	phonePattern := regexp.MustCompile(`^1[3-9]\d{9}$`)
-	if !phonePattern.MatchString(phone) {
+	if !phoneRegex.MatchString(phone) {
 		return errno.ErrInvalidArgument.WithMessage("invalid phone format")
 	}
 	return nil

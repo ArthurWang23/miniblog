@@ -5,7 +5,10 @@ import (
 	userv1 "github.com/ArthurWang23/miniblog/internal/apiserver/biz/v1/user"
 	"github.com/ArthurWang23/miniblog/internal/apiserver/store"
 	"github.com/ArthurWang23/miniblog/pkg/auth"
+	"github.com/google/wire"
 )
+
+var ProviderSet = wire.NewSet(NewBiz, wire.Bind(new(IBiz), new(*biz)))
 
 // 业务逻辑层
 type IBiz interface {
