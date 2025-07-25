@@ -2,11 +2,14 @@ package store
 
 import (
 	"context"
+	"github.com/google/wire"
 	"sync"
 
 	"github.com/ArthurWang23/miniblog/pkg/store/where"
 	"gorm.io/gorm"
 )
+
+var ProviderSet = wire.NewSet(NewStore, wire.Bind(new(IStore), new(*datastore)))
 
 var (
 	once sync.Once
@@ -25,6 +28,9 @@ type IStore interface {
 	// User()和Post()分别返回User资源的store层方法和Post资源的store层方法
 	User() UserStore
 	Post() PostStore
+
+	// 展示在go中直接与db交互
+	ConcretePost() ConcretePostStore
 }
 
 // 用于在context.Context中存储事务上下文的键
@@ -78,3 +84,5 @@ func (store *datastore) User() UserStore {
 func (store *datastore) Post() PostStore {
 	return newPostStore(store)
 }
+
+func (store *datastore) ConcretePost() ConcretePostStore { return newConcretePostStore(store) }
