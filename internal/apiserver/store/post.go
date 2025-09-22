@@ -2,13 +2,10 @@ package store
 
 import (
 	"context"
-	"errors"
+
 	"github.com/ArthurWang23/miniblog/internal/apiserver/model"
-	"github.com/ArthurWang23/miniblog/internal/pkg/errno"
-	"github.com/ArthurWang23/miniblog/internal/pkg/log"
 	genericstore "github.com/ArthurWang23/miniblog/pkg/store"
 	"github.com/ArthurWang23/miniblog/pkg/store/where"
-	"gorm.io/gorm"
 )
 
 type PostStore interface {

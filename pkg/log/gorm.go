@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	gormlogger "gorm.io/gorm/logger"
 	"path/filepath"

@@ -8,8 +8,11 @@ package app
 
 import (
 	"github.com/ArthurWang23/miniblog/cmd/mb-apiserver/app/options"
+	"github.com/ArthurWang23/miniblog/internal/apiserver"
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
+	kratoslog "github.com/ArthurWang23/miniblog/pkg/log"
 	"github.com/ArthurWang23/miniblog/pkg/version"
+	"github.com/go-kratos/kratos/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -61,6 +64,10 @@ The project features include:
 	opts.AddFlags(cmd.PersistentFlags())
 
 	version.AddFlags(cmd.PersistentFlags())
+
+	// 新增：kratos 启动子命令
+	cmd.AddCommand(newKratosCommand(opts))
+
 	return cmd
 }
 
@@ -112,4 +119,59 @@ func logOptions() *log.Options {
 	}
 
 	return opts
+}
+
+// 新增：kratos 子命令
+func newKratosCommand(opts *options.ServerOptions) *cobra.Command {
+	return &cobra.Command{
+		Use:   "run-kratos",
+		Short: "Run miniblog with Kratos app container",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runKratos(opts)
+		},
+		Args: cobra.NoArgs,
+	}
+}
+
+// 新增：用 Kratos 启动
+func runKratos(opts *options.ServerOptions) error {
+	version.PrintAndExitIfRequested()
+	log.Init(logOptions())
+	defer log.Sync()
+
+	if err := viper.Unmarshal(opts); err != nil {
+		return err
+	}
+	if err := opts.Validate(); err != nil {
+		return err
+	}
+	cfg, err := opts.Config()
+	if err != nil {
+		return err
+	}
+
+	// 通过 wire 获取 ServerConfig
+	sc, err := apiserver.InitializeServerConfig(cfg)
+	if err != nil {
+		return err
+	}
+
+	// 基于 ServerConfig 构建 Kratos 传输层
+	kservers, err := sc.NewKratosServers()
+	if err != nil {
+		return err
+	}
+
+	// 构建 Kratos app，注入多个传输服务器
+	appOpts := []kratos.Option{
+		kratos.Name("miniblog"),
+		kratos.Version(version.Get().GitVersion),
+		kratos.Logger(kratoslog.Kratos()),
+	}
+	for _, s := range kservers {
+		appOpts = append(appOpts, kratos.Server(s))
+	}
+
+	app := kratos.New(appOpts...)
+	return app.Run()
 }

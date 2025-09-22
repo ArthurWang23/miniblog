@@ -12,11 +12,12 @@ package apiserver
 
 import (
 	"context"
-	"github.com/glebarez/sqlite"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/glebarez/sqlite"
 
 	"github.com/ArthurWang23/miniblog/internal/apiserver/biz"
 	"github.com/ArthurWang23/miniblog/internal/apiserver/model"

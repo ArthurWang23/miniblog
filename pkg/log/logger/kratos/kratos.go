@@ -1,16 +1,19 @@
 package kratos
 
 import (
+	"os"
+
 	krtlog "github.com/go-kratos/kratos/v2/log"
-	"log"
 )
 
+// NewLogger 返回一个带有标准字段的 Kratos Logger。
 func NewLogger(id, name, version string) krtlog.Logger {
-	return krtlog.With(log.Default(),
-		"ts",krtlog.With(log.Default(),
-			"caller",krtlog.DefaultCaller,
-			"service.id",info.ID,
-			"service.name",info.Name,
-			"service.version",info.Version,
-		)
+	return krtlog.With(
+		krtlog.NewStdLogger(os.Stdout),
+		"ts", krtlog.DefaultTimestamp,
+		"caller", krtlog.DefaultCaller,
+		"service.id", id,
+		"service.name", name,
+		"service.version", version,
+	)
 }

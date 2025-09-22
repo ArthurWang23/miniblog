@@ -9,10 +9,10 @@ type KratosLogger interface {
 	Log(level krtlog.Level, keyvals ...any) error
 }
 
-func (l *zaplogger) Log(level krtlog.Level, keyvals ...any) error {
+func (l *zapLogger) Log(level krtlog.Level, keyvals ...any) error {
 	keylen := len(keyvals)
 	if keylen == 0 || keylen%2 != 0 {
-		l.z.Warn(fmt.Sprintf("Keyvalues must appear in pairs: ", keyvals))
+		l.z.Warn(fmt.Sprintf("Keyvalues must appear in pairs: %v", keyvals))
 		return nil
 	}
 
@@ -29,4 +29,9 @@ func (l *zaplogger) Log(level krtlog.Level, keyvals ...any) error {
 		l.z.Sugar().Fatalw("", keyvals...)
 	}
 	return nil
+}
+
+// 提供一个便捷方法，直接以 krtlog.Logger 形式返回
+func Kratos() krtlog.Logger {
+	return std
 }
