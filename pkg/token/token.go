@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/go-kratos/kratos/v2/transport"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -70,10 +71,17 @@ func Parse(tokenString string, key string) (string, error) {
 
 // 从请求头中获取令牌，并将其传递给parse函数解析
 func ParseRequest(ctx context.Context) (string, error) {
-	var (
-		token string
-		err   error
-	)
+	// 优先支持 Kratos transport 上下文（HTTP/gRPC 均会注入）
+	if info, ok := transport.FromServerContext(ctx); ok {
+		header := info.RequestHeader().Get("Authorization")
+		if len(header) == 0 {
+			return "", errors.New("the length of the `Authorization` header is zero")
+		}
+		var token string
+		_, _ = fmt.Sscanf(header, "Bearer %s", &token)
+		return Parse(token, config.key)
+	}
+
 	switch typed := ctx.(type) {
 	case *gin.Context:
 		header := typed.Request.Header.Get("Authorization")

@@ -70,6 +70,39 @@ func (c *ServerConfig) InstallRESTAPI(engin *gin.Engine) {
 
 }
 
+func (c *ServerConfig) InstallRESTAPIWithoutAuth(engin *gin.Engine) {
+	InstallGenericAPI(engin)
+
+	handler := handler.NewHandler(c.biz, c.val)
+
+	engin.GET("/healthz", handler.Healthz)
+	// 这两个接口比较简单，没有API版本
+	engin.POST("/login", handler.Login)
+	// 取消 Gin 的鉴权中间件，由 Kratos middleware 负责
+	engin.PUT("/refresh-token", handler.RefreshToken)
+
+	v1 := engin.Group("/v1")
+	{
+		userv1 := v1.Group("/users")
+		{
+			userv1.POST("", handler.CreateUser)
+			// userv1.Use(authMiddlewares...) // 移除 Gin 鉴权
+			userv1.GET(":userID", handler.GetUser)
+			userv1.PUT(":userID", handler.UpdateUser)
+			userv1.DELETE(":userID", handler.DeleteUser)
+			userv1.PUT(":userID/change-password", handler.ChangePassword)
+			userv1.GET("", handler.ListUser)
+		}
+		postv1 := v1.Group("/posts")
+		{
+			postv1.POST("", handler.CreatePost)
+			postv1.PUT(":postID", handler.UpdatePost)
+			postv1.DELETE("", handler.DeletePost)
+			postv1.GET(":postID", handler.GetPost)
+			postv1.GET("", handler.ListPost)
+		}
+	}
+}
 // 安装业务无关的路由 ，如pprof、404
 func InstallGenericAPI(engin *gin.Engine) {
 	// pprof用来提供性能调试和优化的api接口

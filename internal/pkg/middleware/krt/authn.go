@@ -11,6 +11,7 @@ import (
 	"github.com/ArthurWang23/miniblog/pkg/token"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
+	kratoshttp "github.com/go-kratos/kratos/v2/transport/http"
 )
 
 type UserRetriever interface {
@@ -20,9 +21,13 @@ type UserRetriever interface {
 func Authn(retriever UserRetriever, whitelist map[string]struct{}) middleware.Middleware {
 	return func(next middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req interface{}) (interface{}, error) {
-			// 白名单方法直接跳过认证
+			// 白名单方法/路径直接跳过认证
 			if info, ok := transport.FromServerContext(ctx); ok {
-				if _, skip := whitelist[info.Operation()]; skip {
+				target := info.Operation()
+				if ht, ok := info.(*kratoshttp.Transport); ok && ht.Request() != nil {
+					target = ht.Request().URL.Path
+				}
+				if _, skip := whitelist[target]; skip {
 					return next(ctx, req)
 				}
 			}

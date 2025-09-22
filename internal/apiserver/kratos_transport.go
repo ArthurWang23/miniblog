@@ -9,7 +9,6 @@ import (
 	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
 	kratoslog "github.com/ArthurWang23/miniblog/pkg/log"
 	genericvalidation "github.com/ArthurWang23/miniblog/pkg/validation"
-	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/go-kratos/kratos/v2/transport"
 	kratosgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
@@ -23,14 +22,14 @@ import (
 // 构建 Kratos HTTP Server，并挂载 gin.Engine
 func (c *ServerConfig) NewKratosHTTPServer() transport.Server {
 	engin := gin.New()
-	engin.Use(gin.Recovery(), mwgin.NoCache, mwgin.Cors, mwgin.Secure, mwgin.RequestIDMiddleware())
-	c.InstallRESTAPI(engin)
+	engin.Use(gin.Recovery(), mwgin.NoCache, mwgin.Cors, mwgin.Secure)
+	c.InstallRESTAPIWithoutAuth(engin)
 
-	// 业务无关路由
-	pprof.Register(engin)
-	engin.NoRoute(func(ctx *gin.Context) {
-		ctx.JSON(404, "Page not found.")
-	})
+	// HTTP 路径白名单（按 Path）
+	httpWhitelist := map[string]struct{}{
+		"/healthz": {},
+		"/login":   {},
+	}
 
 	hs := kratoshttp.NewServer(
 		kratoshttp.Network(c.cfg.HTTPOptions.Network),
@@ -38,6 +37,13 @@ func (c *ServerConfig) NewKratosHTTPServer() transport.Server {
 		kratoshttp.Timeout(c.cfg.HTTPOptions.Timeout),
 		kratoshttp.Logger(kratoslog.Kratos()),
 		kratoshttp.TLSConfig(c.cfg.TLSOptions.MustTLSConfig()),
+		kratoshttp.Middleware(
+			mwrkrt.RequestID(),
+			mwrkrt.Authn(c.retriever, httpWhitelist),
+			mwrkrt.Authz(c.authz, httpWhitelist),
+			mwrkrt.Defaulter(),
+			mwrkrt.Validator(genericvalidation.NewValidator(c.val)),
+		),
 	)
 	hs.HandlePrefix("/", engin)
 	return hs
@@ -93,12 +99,26 @@ func (c *ServerConfig) NewKratosGatewayHTTPServer() (transport.Server, error) {
 		return nil, err
 	}
 
+	// HTTP 路径白名单，可按需补充 gateway 的具体路由（按实际映射路径）
+	httpWhitelist := map[string]struct{}{
+		"/healthz": {},
+		"/login":   {},
+	}
+
 	hs := kratoshttp.NewServer(
 		kratoshttp.Network(c.cfg.HTTPOptions.Network),
 		kratoshttp.Address(c.cfg.HTTPOptions.Addr),
 		kratoshttp.Timeout(c.cfg.HTTPOptions.Timeout),
 		kratoshttp.Logger(kratoslog.Kratos()),
 		kratoshttp.TLSConfig(c.cfg.TLSOptions.MustTLSConfig()),
+		// 挂载与 HTTP 侧一致的 Kratos middleware 链
+		kratoshttp.Middleware(
+			mwrkrt.RequestID(),
+			mwrkrt.Authn(c.retriever, httpWhitelist),
+			mwrkrt.Authz(c.authz, httpWhitelist),
+			mwrkrt.Defaulter(),
+			mwrkrt.Validator(genericvalidation.NewValidator(c.val)),
+		),
 	)
 	hs.HandlePrefix("/", mux)
 	return hs, nil
