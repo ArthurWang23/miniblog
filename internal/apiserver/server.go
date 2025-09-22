@@ -57,6 +57,9 @@ type Config struct {
 	MySQLOptions      *genericoptions.MySQLOptions
 	TLSOptions        *genericoptions.TLSOptions
 	EnableMemoryStore bool
+
+	// 新增：etcd 注册中心配置
+	EtcdOptions *genericoptions.EtcdOptions
 }
 
 // 根据ServerMode决定要启动的服务器类型

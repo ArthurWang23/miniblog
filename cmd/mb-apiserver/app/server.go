@@ -162,6 +162,16 @@ func runKratos(opts *options.ServerOptions) error {
 		return err
 	}
 
+	// 新增：构建 etcd Registrar/Discovery（自动注册服务实例）
+	var registrar kratos.Registrar
+	if sc.cfg.EtcdOptions != nil && len(sc.cfg.EtcdOptions.Endpoints) > 0 {
+		reg, _, err := apiserver.NewEtcdRegistry(sc.cfg)
+		if err != nil {
+			return err
+		}
+		registrar = reg
+	}
+
 	// 构建 Kratos app，注入多个传输服务器
 	appOpts := []kratos.Option{
 		kratos.Name("miniblog"),
@@ -170,6 +180,10 @@ func runKratos(opts *options.ServerOptions) error {
 	}
 	for _, s := range kservers {
 		appOpts = append(appOpts, kratos.Server(s))
+	}
+	// 新增：注入 Registrar
+	if registrar != nil {
+		appOpts = append(appOpts, kratos.Registrar(registrar))
 	}
 
 	app := kratos.New(appOpts...)

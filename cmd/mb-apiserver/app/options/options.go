@@ -52,6 +52,9 @@ type ServerOptions struct {
 	MySQLOptions *genericoptions.MySQLOptions `json:"mysql" mapstructure:"mysql"`
 
 	TLSOptions *genericoptions.TLSOptions `json:"tls" mapstructure:"tls"`
+
+	// 新增：etcd 注册中心配置
+	EtcdOptions *genericoptions.EtcdOptions `json:"etcd" mapstructure:"etcd"`
 }
 
 // 创建ServerOptions的默认配置
@@ -64,6 +67,8 @@ func NewServerOptions() *ServerOptions {
 		HTTPOptions:  genericoptions.NewHTTPOptions(),
 		MySQLOptions: genericoptions.NewMySQLOptions(),
 		TLSOptions:   genericoptions.NewTLSOptions(),
+		// 新增：默认 etcd 选项
+		EtcdOptions: genericoptions.NewEtcdOptions(),
 	}
 	opts.GRPCOptions.Addr = ":6666"
 	opts.HTTPOptions.Addr = ":5555"
@@ -79,6 +84,8 @@ func (o *ServerOptions) AddFlags(fs *pflag.FlagSet) {
 	o.HTTPOptions.AddFlags(fs)
 	o.MySQLOptions.AddFlags(fs)
 	o.TLSOptions.AddFlags(fs)
+	// 新增：etcd 相关 flags
+	o.EtcdOptions.AddFlags(fs)
 }
 
 // Validate校验ServerOptions中的选项是否合法
@@ -98,6 +105,8 @@ func (o *ServerOptions) Validate() error {
 	if stringsutil.StringIn(o.ServerMode, []string{apiserver.GRPCServerMode, apiserver.GRPCGatewayServerMode}) {
 		errs = append(errs, o.GRPCOptions.Validate()...)
 	}
+	// 新增：校验 etcd 选项
+	errs = append(errs, o.EtcdOptions.Validate()...)
 	// 聚合为一个错误 用的k8s生态中的一个包
 	return utilerrors.NewAggregate(errs)
 }
@@ -113,5 +122,7 @@ func (o *ServerOptions) Config() (*apiserver.Config, error) {
 		HTTPOptions:  o.HTTPOptions,
 		MySQLOptions: o.MySQLOptions,
 		TLSOptions:   o.TLSOptions,
+		// 新增：下发 etcd 选项
+		EtcdOptions:  o.EtcdOptions,
 	}, nil
 }

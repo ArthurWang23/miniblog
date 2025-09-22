@@ -39,3 +39,16 @@ tls:
   use-tls: true
   cert: /root/.miniblog/cert/server.crt
   key: /root/.miniblog/cert/server.key
+
+# etcd 注册中心
+etcd:
+  endpoints:
+    - 127.0.0.1:2379
+  dial-timeout: 5s
+  username: ""
+  password: ""
+  tls:
+    use-tls: false
+    cert-file: ""
+    key-file: ""
+    ca-file: ""
