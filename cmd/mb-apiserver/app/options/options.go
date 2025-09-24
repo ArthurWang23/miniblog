@@ -55,6 +55,9 @@ type ServerOptions struct {
 
 	// 新增：etcd 注册中心配置
 	EtcdOptions *genericoptions.EtcdOptions `json:"etcd" mapstructure:"etcd"`
+
+	// 新增：Kafka 配置（可选）
+	KafkaOptions *genericoptions.KafkaOptions `json:"kafka" mapstructure:"kafka"`
 }
 
 // 创建ServerOptions的默认配置
@@ -69,6 +72,8 @@ func NewServerOptions() *ServerOptions {
 		TLSOptions:   genericoptions.NewTLSOptions(),
 		// 新增：默认 etcd 选项
 		EtcdOptions: genericoptions.NewEtcdOptions(),
+		// 新增：默认 Kafka 选项
+		KafkaOptions: genericoptions.NewKafkaOptions(),
 	}
 	opts.GRPCOptions.Addr = ":6666"
 	opts.HTTPOptions.Addr = ":5555"
@@ -86,6 +91,8 @@ func (o *ServerOptions) AddFlags(fs *pflag.FlagSet) {
 	o.TLSOptions.AddFlags(fs)
 	// 新增：etcd 相关 flags
 	o.EtcdOptions.AddFlags(fs)
+	// 新增：Kafka 相关 flags（可选）
+	o.KafkaOptions.AddFlags(fs)
 }
 
 // Validate校验ServerOptions中的选项是否合法
@@ -107,6 +114,10 @@ func (o *ServerOptions) Validate() error {
 	}
 	// 新增：校验 etcd 选项
 	errs = append(errs, o.EtcdOptions.Validate()...)
+	// 新增：Kafka 校验（仅在配置了 brokers 时进行校验，保持可选特性）
+	if o.KafkaOptions != nil && len(o.KafkaOptions.Brokers) > 0 {
+		errs = append(errs, o.KafkaOptions.Validate()...)
+	}
 	// 聚合为一个错误 用的k8s生态中的一个包
 	return utilerrors.NewAggregate(errs)
 }
@@ -124,5 +135,7 @@ func (o *ServerOptions) Config() (*apiserver.Config, error) {
 		TLSOptions:   o.TLSOptions,
 		// 新增：下发 etcd 选项
 		EtcdOptions:  o.EtcdOptions,
+		// 新增：下发 Kafka 选项（可选）
+		KafkaOptions: o.KafkaOptions,
 	}, nil
 }

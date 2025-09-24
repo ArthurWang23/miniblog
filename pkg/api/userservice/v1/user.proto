@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package userservice.v1;
+
+option go_package = "github.com/ArthurWang23/miniblog/pkg/api/userservice/v1;v1";
+
+// 健康检查
+message HealthzRequest {}
+message HealthzReply {
+  string status = 1; // "ok"
+}
+
+// 创建用户（占位）
+message CreateUserRequest {
+  string username = 1;
+  string password = 2;
+}
+message CreateUserReply {
+  string user_id = 1;
+}
+
+// 登录（占位）
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+message LoginReply {
+  string access_token = 1;
+  int64  expires_in   = 2;
+}
+
+import "google/api/annotations.proto";
+
+service UserService {
+  rpc Healthz(HealthzRequest) returns (HealthzReply) {
+    option (google.api.http) = {
+      get: "/healthz"
+    };
+  }
+
+  rpc CreateUser(CreateUserRequest) returns (CreateUserReply) {
+    option (google.api.http) = {
+      post: "/v1/users"
+      body: "*"
+    };
+  }
+
+  rpc Login(LoginRequest) returns (LoginReply) {
+    option (google.api.http) = {
+      post: "/v1/login"
+      body: "*"
+    };
+  }
+}

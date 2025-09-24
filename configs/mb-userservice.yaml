@@ -1,0 +1,43 @@
+# 开启 HTTP + gRPC
+server-mode: both
+
+http:
+  network: tcp
+  addr: ":8082"
+  timeout: 3s
+
+grpc:
+  network: tcp
+  addr: ":9092"
+  timeout: 3s
+
+tls:
+  use-tls: false
+
+# MySQL 连接参数（必填）
+mysql:
+  host: "127.0.0.1:3306"
+  username: "miniblog"
+  password: "miniblog1234"
+  database: "miniblog"
+  max-idle-connections: 100
+  max-open-connections: 100
+  max-connection-life-time: 10s
+  log-mode: 1 # gorm logger level：1=Silent
+
+# etcd 注册中心
+etcd:
+  endpoints:
+    - "127.0.0.1:2379"
+  dial-timeout: 3s
+  username: ""
+  password: ""
+  tls:
+    use-tls: false
+    cert-file: ""
+    key-file: ""
+    ca-file: ""
+
+jwt:
+  key: miniblog
+  expiration: 2h

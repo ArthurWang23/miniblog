@@ -11,7 +11,10 @@ import (
 	"github.com/ArthurWang23/miniblog/internal/apiserver"
 	"github.com/ArthurWang23/miniblog/internal/pkg/log"
 	kratoslog "github.com/ArthurWang23/miniblog/pkg/log"
+	"github.com/ArthurWang23/miniblog/pkg/registry"
 	"github.com/ArthurWang23/miniblog/pkg/version"
+	"github.com/ArthurWang23/miniblog/internal/pkg/known"
+	"github.com/ArthurWang23/miniblog/pkg/token"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -88,6 +91,14 @@ func run(opts *options.ServerOptions) error {
 	if err != nil {
 		return err
 	}
+
+	// 新增：启动 Kafka 消费者（可选）
+	stopKafka, err := apiserver.StartKafkaConsumer(cfg)
+	if err != nil {
+		return err
+	}
+	defer stopKafka()
+
 	server, err := cfg.NewUnionServer()
 	if err != nil {
 		return err
@@ -150,11 +161,21 @@ func runKratos(opts *options.ServerOptions) error {
 		return err
 	}
 
+	// 初始化 JWT（Kratos 模式下保证与传统模式一致）
+	token.Init(cfg.JWTKey, known.XUserID, cfg.Expiration)
+
 	// 通过 wire 获取 ServerConfig
 	sc, err := apiserver.InitializeServerConfig(cfg)
 	if err != nil {
 		return err
 	}
+
+	// 新增：启动 Kafka 消费者（可选）
+	stopKafka, err := apiserver.StartKafkaConsumer(sc.cfg)
+	if err != nil {
+		return err
+	}
+	defer stopKafka()
 
 	// 基于 ServerConfig 构建 Kratos 传输层
 	kservers, err := sc.NewKratosServers()
@@ -162,10 +183,10 @@ func runKratos(opts *options.ServerOptions) error {
 		return err
 	}
 
-	// 新增：构建 etcd Registrar/Discovery（自动注册服务实例）
+	// 构建 etcd Registrar/Discovery（自动注册服务实例）
 	var registrar kratos.Registrar
 	if sc.cfg.EtcdOptions != nil && len(sc.cfg.EtcdOptions.Endpoints) > 0 {
-		reg, _, err := apiserver.NewEtcdRegistry(sc.cfg)
+		reg, _, err := registry.NewEtcdRegistryWithOptions(sc.cfg.EtcdOptions)
 		if err != nil {
 			return err
 		}

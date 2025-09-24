@@ -6,10 +6,6 @@
 
 package apiserver
 
-// 运行时代码保存在internal/apiserver
-// 初始化配置正确加载并读取后，基于初始化配置创建运行时配置，并基于运行时配置创建服务器实例
-// 采用面向对象风格UnionServer结构体封装服务相关功能
-
 import (
 	"context"
 	"os"
@@ -60,6 +56,9 @@ type Config struct {
 
 	// 新增：etcd 注册中心配置
 	EtcdOptions *genericoptions.EtcdOptions
+
+	// 新增：Kafka 消费配置（可选）
+	KafkaOptions *genericoptions.KafkaOptions
 }
 
 // 根据ServerMode决定要启动的服务器类型

@@ -1,36 +1,37 @@
-package apiserver
+package userservice
 
 import (
-	"context"
-
-	handlergrpc "github.com/ArthurWang23/miniblog/internal/apiserver/handler/grpc"
 	mwgin "github.com/ArthurWang23/miniblog/internal/pkg/middleware/gin"
 	mwrkrt "github.com/ArthurWang23/miniblog/internal/pkg/middleware/krt"
-	apiv1 "github.com/ArthurWang23/miniblog/pkg/api/apiserver/v1"
 	kratoslog "github.com/ArthurWang23/miniblog/pkg/log"
-	genericvalidation "github.com/ArthurWang23/miniblog/pkg/validation"
 	"github.com/gin-gonic/gin"
 	"github.com/go-kratos/kratos/v2/transport"
-	kratosgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
 	kratoshttp "github.com/go-kratos/kratos/v2/transport/http"
+	kratosgrpc "github.com/go-kratos/kratos/v2/transport/grpc"
+	pb "github.com/ArthurWang23/miniblog/pkg/api/userservice/v1"
+	handlergrpc "github.com/ArthurWang23/miniblog/internal/userservice/handler/grpc"
+	handlerhttp "github.com/ArthurWang23/miniblog/internal/userservice/handler/http"
+	"context"
+
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"github.com/ArthurWang23/miniblog/pkg/token"
 )
 
-// 构建 Kratos HTTP Server，并挂载 gin.Engine
-func (c *ServerConfig) NewKratosHTTPServer() transport.Server {
-	engin := gin.New()
-	engin.Use(gin.Recovery(), mwgin.NoCache, mwgin.Cors, mwgin.Secure)
-	c.InstallRESTAPIWithoutAuth(engin)
+// HTTP Server（Gin）
+func (c *ServerConfig) newHTTPServer() transport.Server {
+	engine := gin.New()
+	engine.Use(gin.Recovery(), mwgin.NoCache, mwgin.Cors, mwgin.Secure)
+	// 注入依赖到 HTTP handler
+	httpHandler := handlerhttp.NewHandler(c.userStore, c.kafkaWriter)
+	InstallRoutes(engine, httpHandler)
 
-	// HTTP 路径白名单（按 Path）
+	// HTTP 路径白名单
 	httpWhitelist := map[string]struct{}{
-		"/healthz": {},
-		"/login":   {},
-		"/v1/users":{},
+		"/healthz":  {},
+		"/v1/users": {},
+		"/v1/login": {},
 	}
 
 	hs := kratoshttp.NewServer(
@@ -41,23 +42,22 @@ func (c *ServerConfig) NewKratosHTTPServer() transport.Server {
 		kratoshttp.TLSConfig(c.cfg.TLSOptions.MustTLSConfig()),
 		kratoshttp.Middleware(
 			mwrkrt.RequestID(),
+			// 接入认证/鉴权
 			mwrkrt.Authn(c.retriever, httpWhitelist),
 			mwrkrt.Authz(c.authz, httpWhitelist),
-			mwrkrt.Defaulter(),
-			mwrkrt.Validator(genericvalidation.NewValidator(c.val)),
 		),
 	)
-	hs.HandlePrefix("/", engin)
+	hs.HandlePrefix("/", engine)
 	return hs
 }
 
-// 构建 Kratos gRPC Server，复用现有拦截器链与服务注册
-func (c *ServerConfig) NewKratosGRPCServer() transport.Server {
-	// Kratos middleware 链 + 白名单
-	whitelist := map[string]struct{}{
-		apiv1.MiniBlog_Healthz_FullMethodName:    {},
-		apiv1.MiniBlog_CreateUser_FullMethodName: {},
-		apiv1.MiniBlog_Login_FullMethodName:      {},
+// gRPC Server
+func (c *ServerConfig) newGRPCServer() transport.Server {
+	// gRPC FullMethod 白名单
+	grpcWhitelist := map[string]struct{}{
+		"/userservice.v1.UserService/Healthz":   {},
+		"/userservice.v1.UserService/CreateUser": {},
+		"/userservice.v1.UserService/Login":     {},
 	}
 
 	gs := kratosgrpc.NewServer(
@@ -66,25 +66,22 @@ func (c *ServerConfig) NewKratosGRPCServer() transport.Server {
 		kratosgrpc.Timeout(c.cfg.GRPCOptions.Timeout),
 		kratosgrpc.Logger(kratoslog.Kratos()),
 		kratosgrpc.TLSConfig(c.cfg.TLSOptions.MustTLSConfig()),
-		// 使用 Kratos middleware 链（取代原 UnaryInterceptor）
 		kratosgrpc.Middleware(
 			mwrkrt.RequestID(),
-			mwrkrt.Authn(c.retriever, whitelist),
-			mwrkrt.Authz(c.authz, whitelist),
-			mwrkrt.Defaulter(),
-			mwrkrt.Validator(genericvalidation.NewValidator(c.val)),
+			// 接入认证/鉴权
+			mwrkrt.Authn(c.retriever, grpcWhitelist),
+			mwrkrt.Authz(c.authz, grpcWhitelist),
 		),
 	)
-
-	apiv1.RegisterMiniBlogServer(gs, handlergrpc.NewHandler(c.biz))
+	// 注入依赖到 gRPC handler
+	pb.RegisterUserServiceServer(gs, handlergrpc.NewHandler(c.userStore, c.kafkaWriter))
 	return gs
 }
 
-// 构建 Kratos HTTP Server 作为 grpc-gateway
-func (c *ServerConfig) NewKratosGatewayHTTPServer() (transport.Server, error) {
+// Gateway HTTP Server（grpc-gateway）
+func (c *ServerConfig) newGatewayHTTPServer() (transport.Server, error) {
 	mux := runtime.NewServeMux()
 
-	// gRPC 客户端连接到本地 gRPC 服务
 	var dialOpts []grpc.DialOption
 	if c.cfg.TLSOptions != nil && c.cfg.TLSOptions.UseTLS {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(c.cfg.TLSOptions.MustTLSConfig())))
@@ -97,15 +94,15 @@ func (c *ServerConfig) NewKratosGatewayHTTPServer() (transport.Server, error) {
 		return nil, err
 	}
 
-	if err := apiv1.RegisterMiniBlogHandler(context.Background(), mux, conn); err != nil {
+	if err := pb.RegisterUserServiceHandler(context.Background(), mux, conn); err != nil {
 		return nil, err
 	}
 
-	// HTTP 路径白名单，可按需补充 gateway 的具体路由（按实际映射路径）
+	// HTTP 路径白名单（与 HTTP Server 保持一致）
 	httpWhitelist := map[string]struct{}{
-		"/healthz": {},
-		"/login":   {},
-		"/v1/users":{},
+		"/healthz":  {},
+		"/v1/users": {},
+		"/v1/login": {},
 	}
 
 	hs := kratoshttp.NewServer(
@@ -114,36 +111,33 @@ func (c *ServerConfig) NewKratosGatewayHTTPServer() (transport.Server, error) {
 		kratoshttp.Timeout(c.cfg.HTTPOptions.Timeout),
 		kratoshttp.Logger(kratoslog.Kratos()),
 		kratoshttp.TLSConfig(c.cfg.TLSOptions.MustTLSConfig()),
-		// 挂载与 HTTP 侧一致的 Kratos middleware 链
 		kratoshttp.Middleware(
 			mwrkrt.RequestID(),
+			// 接入认证/鉴权
 			mwrkrt.Authn(c.retriever, httpWhitelist),
 			mwrkrt.Authz(c.authz, httpWhitelist),
-			mwrkrt.Defaulter(),
-			mwrkrt.Validator(genericvalidation.NewValidator(c.val)),
 		),
 	)
 	hs.HandlePrefix("/", mux)
 	return hs, nil
 }
 
-// 根据 serverMode 返回一个或多个 Kratos Server
 func (c *ServerConfig) NewKratosServers() ([]transport.Server, error) {
-	token.Init(c.cfg.JWTKey, known.XUserID, c.cfg.Expiration)
 	switch c.cfg.ServerMode {
-	case GinServerMode:
-		return []transport.Server{c.NewKratosHTTPServer()}, nil
-	case GRPCServerMode:
-		return []transport.Server{c.NewKratosGRPCServer()}, nil
-	case GRPCGatewayServerMode:
-		grpcSrv := c.NewKratosGRPCServer()
-		httpSrv, err := c.NewKratosGatewayHTTPServer()
+	case "http":
+		return []transport.Server{c.newHTTPServer()}, nil
+	case "grpc":
+		return []transport.Server{c.newGRPCServer()}, nil
+	case "both":
+		return []transport.Server{c.newHTTPServer(), c.newGRPCServer()}, nil
+	case "grpc-gateway":
+		grpcSrv := c.newGRPCServer()
+		httpSrv, err := c.newGatewayHTTPServer()
 		if err != nil {
 			return nil, err
 		}
 		return []transport.Server{grpcSrv, httpSrv}, nil
 	default:
-		// 默认走 gRPC
-		return []transport.Server{c.NewKratosGRPCServer()}, nil
+		return []transport.Server{c.newHTTPServer()}, nil
 	}
 }
